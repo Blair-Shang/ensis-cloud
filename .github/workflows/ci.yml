@@ -40,7 +40,6 @@ jobs:
           node-version: '20'
           cache: pnpm
           cache-dependency-path: niuma-cloud/pnpm-lock.yaml
-          registry-url: https://registry.npmjs.org
 
       - name: Setup Go
         uses: actions/setup-go@v7

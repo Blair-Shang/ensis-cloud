@@ -54,7 +54,7 @@ GitHub Actions 仓库：[Blair-Shang/niuma-cloud](https://github.com/Blair-Shang
 | [CI](./.github/workflows/ci.yml) | `main` 推送 / PR | 类型检查、Admin 构建、Go 测试 |
 | [Pack and Release](./.github/workflows/pack.yml) | `v*` 标签 / 手动 | 打 Linux/Windows amd64 归档；打标签时发 GitHub Release |
 
-CI / 打包从 npm 安装 `niuma-ui@latest`（可用变量 `NIUMA_UI_VERSION` 钉死如 `1.1.11`）。本机仍用 `link:../niuma-ui` 联调。
+CI / 打包从 npm 安装 `niuma-ui@latest`（可用变量 `NIUMA_UI_VERSION` 钉死如 `1.1.11`）。本机仍用 `link:../niuma-ui` 联调。仓库 `.npmrc` 开启 `shamefully-hoist`，让 `vue-tsc` 能解析 npm 包里的 UI 源码依赖。
 
 ## 文档
 

@@ -8,6 +8,12 @@
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-08-30
+
+### 修复
+
+- CI / 打包从 npm 安装 `niuma-ui` 后，`vue-tsc` 能解析其源码依赖（CodeMirror / Reka / marked 等）；不再因缺模块在 Admin 构建阶段失败、产物里没有 `SHA256SUMS.txt`。
+
 ## [1.1.0] - 2026-08-30
 
 ### 新增
@@ -43,6 +49,7 @@
 
 - `config/app.yaml` 不入库，仓库只提交 `config/app.yaml.example`。
 
-[Unreleased]: https://github.com/Blair-Shang/niuma-cloud/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/Blair-Shang/niuma-cloud/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v1.1.1
 [1.1.0]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v1.1.0
 [0.1.0]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v0.1.0
