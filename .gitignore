@@ -1,0 +1,31 @@
+node_modules/
+/dist/
+admin/dist/
+.DS_Store
+NUL
+*.local
+.vscode/*
+!.vscode/extensions.json
+.env
+.env.*
+!.env.example
+server/.env
+pnpm-debug.log*
+*.log
+*.exe
+*.db
+*.db-*
+coverage.out
+
+# 运行配置含数据库口令、JWT、SMTP、pipeline token，只提交样例
+/config/app.yaml
+/config/app.env
+
+/data/
+/logs/
+/run/
+/output/
+
+# 构建产物（保留占位 index 以便 go embed 可编译）
+server/internal/web/dist/**
+!server/internal/web/dist/index.html

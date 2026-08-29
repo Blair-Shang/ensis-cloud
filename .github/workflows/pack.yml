@@ -1,0 +1,155 @@
+# niuma-cloud 打包流水线。
+# Admin 嵌入 Go 单二进制；无 CGO，可在 Linux runner 交叉编译 Windows。
+# 推送 v* 标签时创建 GitHub Release；workflow_dispatch 仅上传 artifact。
+name: Pack and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      niuma_ui_ref:
+        description: niuma-ui git ref (sibling repo)
+        type: string
+        default: 'v1.1.9'
+
+concurrency:
+  group: pack-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+env:
+  CI: 'true'
+
+jobs:
+  pack:
+    name: pack (linux-amd64 + windows-amd64)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: niuma-cloud
+    steps:
+      - name: Resolve version
+        id: meta
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${{ github.ref_name }}"
+            echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+            echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            echo "version=" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -n "${{ github.event.inputs.niuma_ui_ref }}" ]; then
+            echo "niuma_ui_ref=${{ github.event.inputs.niuma_ui_ref }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "niuma_ui_ref=${{ vars.NIUMA_UI_REF || 'v1.1.9' }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout niuma-cloud
+        uses: actions/checkout@v7
+        with:
+          path: niuma-cloud
+
+      - name: Checkout niuma-ui
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ github.repository_owner }}/niuma-ui
+          ref: ${{ steps.meta.outputs.niuma_ui_ref }}
+          path: niuma-ui
+          token: ${{ secrets.NIUMA_UI_TOKEN || github.token }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: |
+            niuma-cloud/pnpm-lock.yaml
+            niuma-ui/pnpm-lock.yaml
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: '1.24'
+          cache-dependency-path: niuma-cloud/server/go.sum
+
+      - name: Install zip
+        working-directory: .
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends zip
+
+      - name: Install JS dependencies
+        run: |
+          pnpm --dir ../niuma-ui install --frozen-lockfile
+          pnpm install --frozen-lockfile
+
+      - name: Verify tag matches package.json
+        if: steps.meta.outputs.version != ''
+        shell: bash
+        run: |
+          TAG="${{ steps.meta.outputs.version }}"
+          PKG="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "Tag version ($TAG) != package.json version ($PKG)" >&2
+            exit 1
+          fi
+
+      - name: Pack release archives
+        env:
+          SKIP_INSTALL: '1'
+          NIUMA_CLOUD_VERSION: ${{ steps.meta.outputs.version }}
+          VITE_CLOUD_API_BASE: /niuma/cloud
+        run: bash script/pack-release.sh
+
+      - name: Upload pack artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: niuma-cloud-pack
+          path: |
+            niuma-cloud/output/*.tar.gz
+            niuma-cloud/output/*.zip
+            niuma-cloud/output/SHA256SUMS.txt
+            niuma-cloud/output/release-notes.md
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: GitHub Release
+    needs: pack
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Download pack artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: niuma-cloud-pack
+          path: release-files
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: niuma-cloud ${{ github.ref_name }}
+          body_path: release-files/release-notes.md
+          draft: false
+          fail_on_unmatched_files: true
+          files: |
+            release-files/*.tar.gz
+            release-files/*.zip
+            release-files/SHA256SUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

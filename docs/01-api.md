@@ -1,0 +1,106 @@
+# Cloud API
+
+生产 Base：`https://www.niuma007.com/niuma/cloud`  
+本地 Base：`http://127.0.0.1:8090/niuma/cloud`
+
+完整前缀：`{base}/api/v1`
+
+## 用户 Auth
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/v1/auth/register/start` | `{ email }` → 发注册 OTP |
+| POST | `/api/v1/auth/register/complete` | `{ email, code, password, displayName? }` |
+| POST | `/api/v1/auth/login` | `{ email, password }` |
+| POST | `/api/v1/auth/login/otp/start` | `{ email }` |
+| POST | `/api/v1/auth/login/otp/complete` | `{ email, code }` |
+| POST | `/api/v1/auth/password/forgot` | `{ email }` |
+| POST | `/api/v1/auth/password/reset` | `{ email, code, password }` |
+| POST | `/api/v1/auth/password/change` | `{ currentPassword, newPassword }`（Bearer） |
+| POST | `/api/v1/auth/refresh` | `{ refreshToken }` |
+| POST | `/api/v1/auth/logout` | `{ refreshToken }` |
+| GET | `/api/v1/me` | Bearer access |
+| PATCH | `/api/v1/me` | `{ displayName }` |
+| POST | `/api/v1/feedback` | 登录或匿名（匿名须 contact）；可带 `images[]` |
+| GET | `/api/v1/feedback/mine` | 登录用户：我的反馈（含 `staffReply`） |
+| GET | `/api/v1/feedback/lookup` | 官网匿名查询：`?id=&contact=` |
+| GET | `/api/v1/feedback/{id}/attachments/{attId}` | 反馈截图 |
+
+## 公开 Updates
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/v1/updates/latest` | `?product=&channel=&platform=&arch=` 最新 published |
+| GET | `/api/v1/updates/check` | 另需 `current`（semver） |
+| GET | `/api/v1/updates/releases` | published 列表 |
+| GET | `/api/v1/updates/files/{product}/{channel}/{platform}/{arch}/{version}/{name}` | 本机安装包（仅 published）；桌面更新 / 官网直链 |
+| POST | `/api/v1/updates/hit` | `{ product?, channel?, platform, arch, version? }` 计次；`version` 空则记最新 published |
+
+## Pipeline（流水线 Token）
+
+GitHub Actions 在打完安装包后：**先把文件传到本机**，再登记 published。国内用户与桌面更新都从本站下载，不走 GitHub。鉴权（二选一）：
+
+- `Authorization: Bearer <pipeline.token>`
+- `X-Niuma-Pipeline-Token: <pipeline.token>`
+
+`pipeline.token` 配在 `config/app.yaml`，或环境变量 `NIUMA_PIPELINE_TOKEN`（至少 16 字符）。未配置时接口返回 `503 pipeline_disabled`。
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/v1/pipeline/releases/assets` | `multipart/form-data`：`file` + `product`/`channel`/`platform`/`arch`/`version`/`sha256`；落盘 `{data_dir}/releases/...` |
+| POST | `/api/v1/pipeline/releases` | 按「产品+渠道+平台+架构+版本」upsert；本机已有文件时自动写官方 `downloadUrl` |
+
+上传字段：`file`（必填）、`product`（默认 niuma）、`channel`（默认 stable）、`platform`、`arch`、`version`、`sha256`（可选，有则必须一致）、`name`（可选，覆盖文件名）。
+
+登记请求体（`downloadUrl` 可省略：本机已有安装包时服务端生成）：
+
+```json
+{
+  "product": "niuma",
+  "version": "1.0.2",
+  "channel": "stable",
+  "title": "NiuMa 1.0.2",
+  "notesMd": "## 新增\\n- ...",
+  "publish": true,
+  "items": [
+    {
+      "platform": "windows",
+      "arch": "x64",
+      "name": "NiuMa-1.0.2-windows-x64-Setup.exe",
+      "sha256": "64 位 hex",
+      "fileSize": 123456789
+    }
+  ]
+}
+```
+
+同一维度重复推送会覆盖下载地址 / 校验和 / 说明（已 yank 的记录返回 `409 release_yanked`）。未上传安装包且未给 `downloadUrl` 时返回 `400 missing_installer`。
+
+员工角色：`admin`（超管，可管员工/用户账号）与 `operator`（日常运营：统计、工单、发布、只读账户）。种子账号为 admin。
+
+## Ops（Staff Bearer）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/v1/ops/auth/login` | 员工登录（access 在 JSON；refresh 仅 HttpOnly Cookie `niuma_ops_rt`） |
+| POST | `/api/v1/ops/auth/refresh` | 轮转 refresh（Cookie 或 body.refreshToken）并签发新 access |
+| POST | `/api/v1/ops/auth/logout` | 吊销当前 refresh 并清 Cookie |
+| POST | `/api/v1/ops/auth/password` | 修改自己的密码（吊销旧会话并重签） |
+| GET | `/api/v1/ops/stats` | `users` / `feedback` / `feedbackLast7d` / `downloadHits` |
+| GET | `/api/v1/ops/audit-logs` | 审计 |
+| GET / POST | `/api/v1/ops/staff` | 员工列表 / 创建（创建需 admin） |
+| PATCH | `/api/v1/ops/staff/{id}` | 启停、显示名、角色（需 admin） |
+| POST | `/api/v1/ops/staff/{id}/password` | 重置员工密码（需 admin） |
+| GET / POST | `/api/v1/ops/users` | 终端用户列表 / 创建（创建需 admin） |
+| GET / PATCH | `/api/v1/ops/users/{id}` | 详情 / 启停（启停需 admin） |
+| POST | `/api/v1/ops/users/{id}/password` | 重置用户密码（需 admin） |
+| GET | `/api/v1/ops/feedback` | 工单列表 |
+| PATCH | `/api/v1/ops/feedback/{id}` | `{ status?, adminNote?, staffReply? }` |
+| GET / POST | `/api/v1/ops/releases` | 发布列表 / 新建草稿 |
+| GET / PATCH | `/api/v1/ops/releases/{id}` | 详情 / 编辑草稿 |
+| POST | `/api/v1/ops/releases/{id}/publish` | 发布 |
+| POST | `/api/v1/ops/releases/{id}/yank` | 撤回 |
+
+## 健康检查
+
+`GET /niuma/cloud/healthz`

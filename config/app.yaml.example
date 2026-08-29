@@ -1,0 +1,102 @@
+# niuma-cloud 运行配置（复制为 app.yaml 后按环境修改；app.yaml 勿提交）
+# 仅 CONFIG_DIR 环境变量可覆盖配置目录，默认 ./config
+
+# HTTP 监听地址，如 :8090 或 0.0.0.0:8090
+http_addr: ":8090"
+# 前后端单次请求读写超时（分钟），默认 5；流水线上传安装包建议 30
+http_timeout_min: 30
+# 是否信任反代的 X-Real-IP / X-Forwarded-For 末跳（生产 Nginx 后保持 true；勿把 :8090 直接暴露公网）
+trust_proxy: true
+
+# 数据库（生产使用 mysql；sqlite 仅本地临时调试）
+db:
+  # 驱动：mysql | sqlite
+  driver: mysql
+  # MySQL DSN：user:pass@tcp(host:port)/dbname?parseTime=true&charset=utf8mb4&loc=UTC
+  # 库不存在时启动会自动 CREATE DATABASE
+  dsn: "root:CHANGE_ME@tcp(127.0.0.1:3306)/niuma_cloud?parseTime=true&charset=utf8mb4&loc=UTC"
+
+# JWT / 会话签发
+jwt:
+  # 签名密钥，至少 16 字符；生产必须更换为长随机串
+  secret: "change-me-to-a-long-random-secret"
+  # Access Token 有效期（分钟）
+  access_token_ttl_min: 30
+  # Refresh Token 有效期（天）
+  refresh_token_ttl_days: 30
+
+# 允许的浏览器跨域来源（Admin / 官网 / 桌面本地调试）
+# 生产同域 www.niuma007.com 时路径为 /niuma/cloud、/niuma/ops
+cors_origins:
+  - http://localhost:5174
+  - http://localhost:5173
+  - http://127.0.0.1:5173
+  - https://www.niuma007.com
+  - https://niuma007.com
+
+# 首次启动若库中无员工账号则种子创建（已存在则跳过）
+staff:
+  email: admin@niuma007.com
+  password: ChangeMeAdmin1!
+
+# SMTP；host 留空时验证码只写日志（开发）
+# 阿里云企业邮推荐：host=smtp.mxhichina.com（或 smtp.qiye.aliyun.com）port=465
+smtp:
+  host: ""
+  port: 465
+  user: ""
+  password: ""
+  # 发件人地址（须与授权账号一致或为其别名）
+  from: noreply@niuma007.com
+  # true：无 SMTP 时 Info 打完整验证码；有 SMTP 时仅打后两位。生产务必 false
+  log_otp: true
+
+# 邮箱验证码策略
+otp:
+  # 验证码有效期（分钟）
+  ttl_min: 5
+  # 同一邮箱同一用途两次发送最小间隔（秒）
+  cooldown_sec: 60
+  # 同一邮箱每日最多发送次数
+  daily_limit: 20
+
+# 用户反馈
+feedback:
+  # 可选：新反馈时 POST 通知的 Webhook URL
+  webhook_url: ""
+
+# 桌面应用内更新：download_url 域名约束；流水线落盘后地址为本站
+# 空列表=仅禁 http/内网/IP（开发）；生产务必含官方域名
+updates:
+  public_base: "https://www.niuma007.com/niuma/cloud"
+  # 安装包目录，默认 {data_dir}/releases
+  dir: ""
+  # 单个安装包上限（MB）
+  max_file_mb: 2048
+  download_url_hosts:
+    - niuma007.com
+    - www.niuma007.com
+    # - cdn.niuma007.com
+
+# GitHub Actions 等流水线：先上传安装包再登记发布；空则 pipeline 接口返回 503
+# 也可用环境变量 NIUMA_PIPELINE_TOKEN 覆盖（勿把生产 token 提交进仓库）
+pipeline:
+  token: ""
+
+# 日志
+log:
+  # debug | info | warn | error
+  level: info
+  # 是否同时输出到控制台
+  to_console: true
+  # 日志目录
+  dir: ./logs
+  # 单文件最大体积（MB），超出滚动
+  max_size_mb: 100
+  # 保留的滚动文件个数
+  max_backups: 10
+  # 保留天数
+  max_age_days: 30
+
+# 本地数据目录（sqlite 路径等）
+data_dir: ./data

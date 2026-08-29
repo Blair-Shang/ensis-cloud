@@ -1,0 +1,71 @@
+# niuma-cloud 持续集成：类型检查、Go 测试、Admin 构建。
+# 依赖同级仓库 niuma-ui（Vite / tsconfig 从源码引用）。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: niuma-cloud
+    steps:
+      - name: Checkout niuma-cloud
+        uses: actions/checkout@v7
+        with:
+          path: niuma-cloud
+
+      - name: Checkout niuma-ui
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ github.repository_owner }}/niuma-ui
+          ref: ${{ vars.NIUMA_UI_REF || 'v1.1.9' }}
+          path: niuma-ui
+          token: ${{ secrets.NIUMA_UI_TOKEN || github.token }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: |
+            niuma-cloud/pnpm-lock.yaml
+            niuma-ui/pnpm-lock.yaml
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: '1.24'
+          cache-dependency-path: niuma-cloud/server/go.sum
+
+      - name: Install JS dependencies
+        run: |
+          pnpm --dir ../niuma-ui install --frozen-lockfile
+          pnpm install --frozen-lockfile
+
+      - name: Typecheck and admin build
+        run: pnpm build
+        env:
+          VITE_CLOUD_API_BASE: /niuma/cloud
+
+      - name: Go tests
+        run: pnpm test:server
