@@ -92,46 +92,44 @@ type UserListItem struct {
 	SessionCount  int `json:"sessionCount"`
 }
 
-func (s *Store) ListUsers(ctx context.Context, q string, limit, offset int) ([]UserListItem, int, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
+// UserListFilter 终端用户列表：字段等值，禁止模糊扫全表。
+type UserListFilter struct {
+	ID          string
+	Email       string
+	DisplayName string
+	Status      string
+	Limit       int
+	Offset      int
+}
+
+func (s *Store) ListUsers(ctx context.Context, f UserListFilter) ([]UserListItem, int, error) {
+	limit, offset := clampPage(f.Limit, f.Offset)
+	where := []string{"1=1"}
+	args := []any{}
+	appendEq(&where, &args, "id", f.ID)
+	if email := strings.ToLower(strings.TrimSpace(f.Email)); email != "" {
+		where = append(where, "email = ?")
+		args = append(args, email)
 	}
-	if offset < 0 {
-		offset = 0
-	}
-	q = strings.TrimSpace(q)
+	appendEq(&where, &args, "display_name", f.DisplayName)
+	appendEq(&where, &args, "account_status", f.Status)
+	clause := strings.Join(where, " AND ")
+
 	var total int
-	var err error
-	if q == "" {
-		err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users`).Scan(&total)
-	} else {
-		err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users WHERE email LIKE ? OR display_name LIKE ?`, "%"+q+"%", "%"+q+"%").Scan(&total)
-	}
-	if err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users WHERE `+clause, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
 	now := nowUTC()
-	var rows *sql.Rows
-	if q == "" {
-		rows, err = s.db.QueryContext(ctx, `
+	queryArgs := append(append([]any{}, args...), now, limit, offset)
+	rows, err := s.db.QueryContext(ctx, `
 			SELECT u.id, u.email, u.password_hash, u.display_name, u.email_verified_at, u.account_status, u.created_at, u.updated_at,
 				(SELECT COUNT(*) FROM feedback f WHERE f.reporter_user_id = u.id) AS feedback_count,
 				(SELECT COUNT(*) FROM refresh_sessions r WHERE r.user_id = u.id AND r.revoked_at IS NULL AND r.expires_at > ?) AS session_count
 			FROM users u
+			WHERE `+clause+`
 			ORDER BY u.created_at DESC
-			LIMIT ? OFFSET ?`, now, limit, offset)
-	} else {
-		like := "%" + q + "%"
-		rows, err = s.db.QueryContext(ctx, `
-			SELECT u.id, u.email, u.password_hash, u.display_name, u.email_verified_at, u.account_status, u.created_at, u.updated_at,
-				(SELECT COUNT(*) FROM feedback f WHERE f.reporter_user_id = u.id) AS feedback_count,
-				(SELECT COUNT(*) FROM refresh_sessions r WHERE r.user_id = u.id AND r.revoked_at IS NULL AND r.expires_at > ?) AS session_count
-			FROM users u
-			WHERE u.email LIKE ? OR u.display_name LIKE ?
-			ORDER BY u.created_at DESC
-			LIMIT ? OFFSET ?`, now, like, like, limit, offset)
-	}
+			LIMIT ? OFFSET ?`, queryArgs...)
 	if err != nil {
 		return nil, 0, err
 	}

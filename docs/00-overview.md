@@ -48,8 +48,8 @@ niuma-cloud/
 | 路径 | 职责 |
 |------|------|
 | `/` | 官网（niuma-site） |
-| `/api/*` | 官网下载计数 |
-| `/niuma/cloud/api/v1/*` | Cloud API |
+| `/api/*` | 官网下载计数后 302 到 cloud `/updates/download` |
+| `/niuma/cloud/api/v1/*` | Cloud API（含最新包入口 `/updates/download`） |
 | `/niuma/cloud/healthz` | Cloud 健康检查 |
 | `/niuma/ops/` | 运营后台 |
 

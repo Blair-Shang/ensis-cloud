@@ -1,6 +1,7 @@
 # niuma-cloud 打包流水线。
 # Admin 嵌入 Go 单二进制；无 CGO，可在 Linux runner 交叉编译 Windows。
 # 推送 v* 标签时创建 GitHub Release；workflow_dispatch 仅上传 artifact。
+# niuma-ui 从 npm 拉取（默认 latest），不 checkout 兄弟 Git 仓库。
 name: Pack and Release
 
 on:
@@ -9,10 +10,10 @@ on:
       - 'v*'
   workflow_dispatch:
     inputs:
-      niuma_ui_ref:
-        description: niuma-ui git ref (sibling repo)
+      niuma_ui_version:
+        description: npm 上的 niuma-ui 版本（如 latest 或 1.1.11）
         type: string
-        default: 'v1.1.9'
+        default: 'latest'
 
 concurrency:
   group: pack-${{ github.workflow }}-${{ github.ref }}
@@ -47,24 +48,16 @@ jobs:
             echo "tag=" >> "$GITHUB_OUTPUT"
             echo "version=" >> "$GITHUB_OUTPUT"
           fi
-          if [ -n "${{ github.event.inputs.niuma_ui_ref }}" ]; then
-            echo "niuma_ui_ref=${{ github.event.inputs.niuma_ui_ref }}" >> "$GITHUB_OUTPUT"
+          if [ -n "${{ github.event.inputs.niuma_ui_version }}" ]; then
+            echo "niuma_ui_version=${{ github.event.inputs.niuma_ui_version }}" >> "$GITHUB_OUTPUT"
           else
-            echo "niuma_ui_ref=${{ vars.NIUMA_UI_REF || 'v1.1.9' }}" >> "$GITHUB_OUTPUT"
+            echo "niuma_ui_version=${{ vars.NIUMA_UI_VERSION || 'latest' }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Checkout niuma-cloud
         uses: actions/checkout@v7
         with:
           path: niuma-cloud
-
-      - name: Checkout niuma-ui
-        uses: actions/checkout@v7
-        with:
-          repository: ${{ github.repository_owner }}/niuma-ui
-          ref: ${{ steps.meta.outputs.niuma_ui_ref }}
-          path: niuma-ui
-          token: ${{ secrets.NIUMA_UI_TOKEN || github.token }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -77,9 +70,8 @@ jobs:
         with:
           node-version: '20'
           cache: pnpm
-          cache-dependency-path: |
-            niuma-cloud/pnpm-lock.yaml
-            niuma-ui/pnpm-lock.yaml
+          cache-dependency-path: niuma-cloud/pnpm-lock.yaml
+          registry-url: https://registry.npmjs.org
 
       - name: Setup Go
         uses: actions/setup-go@v7
@@ -93,8 +85,9 @@ jobs:
 
       - name: Install JS dependencies
         run: |
-          pnpm --dir ../niuma-ui install --frozen-lockfile
-          pnpm install --frozen-lockfile
+          UI="${{ steps.meta.outputs.niuma_ui_version }}"
+          pnpm pkg set "dependencies.@niuma/ui=npm:niuma-ui@${UI}"
+          pnpm install --no-frozen-lockfile
 
       - name: Verify tag matches package.json
         if: steps.meta.outputs.version != ''

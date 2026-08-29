@@ -31,11 +31,13 @@ type AuditLogItem struct {
 }
 
 type AuditListFilter struct {
-	ActionCode string
-	ActorKind  string
-	Q          string // 模糊匹配 action / resource_id / actor_id
-	Limit      int
-	Offset     int
+	ActionCode   string
+	ActorKind    string
+	ActorID      string
+	ResourceKind string
+	ResourceID   string
+	Limit        int
+	Offset       int
 }
 
 func (s *Store) InsertAuditLog(ctx context.Context, a AuditLog) error {
@@ -57,29 +59,15 @@ func (s *Store) InsertAuditLog(ctx context.Context, a AuditLog) error {
 }
 
 func (s *Store) ListAuditLogs(ctx context.Context, f AuditListFilter) ([]AuditLogItem, int, error) {
-	limit, offset := f.Limit, f.Offset
-	if limit <= 0 || limit > 200 {
-		limit = 50
-	}
-	if offset < 0 {
-		offset = 0
-	}
+	limit, offset := clampPage(f.Limit, f.Offset)
 
 	where := []string{"1=1"}
 	args := make([]any, 0, 8)
-	if action := strings.TrimSpace(f.ActionCode); action != "" {
-		where = append(where, "action_code = ?")
-		args = append(args, action)
-	}
-	if kind := strings.TrimSpace(f.ActorKind); kind != "" {
-		where = append(where, "actor_kind = ?")
-		args = append(args, kind)
-	}
-	if q := strings.TrimSpace(f.Q); q != "" {
-		like := "%" + q + "%"
-		where = append(where, "(action_code LIKE ? OR resource_id LIKE ? OR actor_id LIKE ? OR resource_kind LIKE ?)")
-		args = append(args, like, like, like, like)
-	}
+	appendEq(&where, &args, "action_code", f.ActionCode)
+	appendEq(&where, &args, "actor_kind", f.ActorKind)
+	appendEq(&where, &args, "actor_id", f.ActorID)
+	appendEq(&where, &args, "resource_kind", f.ResourceKind)
+	appendEq(&where, &args, "resource_id", f.ResourceID)
 	clause := strings.Join(where, " AND ")
 
 	var total int

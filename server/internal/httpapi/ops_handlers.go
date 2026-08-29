@@ -257,10 +257,16 @@ func (s *Server) handleOpsUsers(w http.ResponseWriter, r *http.Request) {
 	if s.requireStaff(w, r) == nil {
 		return
 	}
-	q := r.URL.Query().Get("q")
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	items, total, err := s.store.ListUsers(r.Context(), q, limit, offset)
+	items, total, err := s.store.ListUsers(r.Context(), store.UserListFilter{
+		ID:          r.URL.Query().Get("id"),
+		Email:       r.URL.Query().Get("email"),
+		DisplayName: r.URL.Query().Get("displayName"),
+		Status:      r.URL.Query().Get("status"),
+		Limit:       limit,
+		Offset:      offset,
+	})
 	if err != nil {
 		s.log.Error("list users", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "server_error")
@@ -302,11 +308,20 @@ func (s *Server) handleOpsFeedbackList(w http.ResponseWriter, r *http.Request) {
 	if s.requireStaff(w, r) == nil {
 		return
 	}
-	status := r.URL.Query().Get("status")
-	q := r.URL.Query().Get("q")
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	items, total, err := s.store.ListFeedback(r.Context(), status, q, limit, offset)
+	items, total, err := s.store.ListFeedback(r.Context(), store.FeedbackListFilter{
+		ID:            r.URL.Query().Get("id"),
+		Title:         r.URL.Query().Get("title"),
+		Contact:       r.URL.Query().Get("contact"),
+		Category:      r.URL.Query().Get("category"),
+		Status:        r.URL.Query().Get("status"),
+		Product:       r.URL.Query().Get("product"),
+		UserID:        r.URL.Query().Get("userId"),
+		ClientVersion: r.URL.Query().Get("clientVersion"),
+		Limit:         limit,
+		Offset:        offset,
+	})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "server_error")
 		return

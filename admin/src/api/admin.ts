@@ -3,9 +3,11 @@ import { setStaff } from './auth'
 import type { OpsAuditListResult, OpsLoginResult, OpsStaffAccount, OpsStaffListResult, OpsUser } from './types'
 
 export function fetchOpsAuditLogs(params?: {
-  q?: string
   action?: string
   actorKind?: string
+  actorId?: string
+  resourceKind?: string
+  resourceId?: string
   limit?: number
   offset?: number
 }): Promise<OpsAuditListResult> {
@@ -13,7 +15,11 @@ export function fetchOpsAuditLogs(params?: {
 }
 
 export function fetchOpsStaff(params?: {
-  q?: string
+  id?: string
+  email?: string
+  displayName?: string
+  status?: string
+  role?: string
   limit?: number
   offset?: number
 }): Promise<OpsStaffListResult> {

@@ -18,6 +18,8 @@ const pwdError = ref('')
 const pwdOk = ref('')
 const pwdLoading = ref(false)
 
+const markSrc = `${import.meta.env.BASE_URL}favicon.svg`
+
 const pageTitle = computed(() => route.meta.title || '控制台')
 
 const pageSubtitle = computed(() => {
@@ -207,7 +209,7 @@ onUnmounted(() => {
   <div class="ops-shell" :class="{ 'ops-shell--collapsed': collapsed }">
     <aside class="ops-sider" aria-label="主导航">
       <router-link class="ops-sider__brand" to="/" :title="collapsed ? 'NiuMa Ops' : undefined">
-        <img class="ops-sider__mark" src="/favicon.svg" width="28" height="28" alt="" />
+        <img class="ops-sider__mark" :src="markSrc" width="28" height="28" alt="" />
         <span v-if="!collapsed" class="ops-sider__brand-text">NiuMa Ops</span>
       </router-link>
 

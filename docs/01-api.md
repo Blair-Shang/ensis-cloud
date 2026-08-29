@@ -30,11 +30,12 @@
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/v1/updates/latest` | `?product=&channel=&platform=&arch=` 最新 published |
+| GET | `/api/v1/updates/latest` | `?product=&channel=&platform=&arch=` 最新 published 元数据（展示用，勿拿来下包） |
 | GET | `/api/v1/updates/check` | 另需 `current`（semver） |
 | GET | `/api/v1/updates/releases` | published 列表 |
-| GET | `/api/v1/updates/files/{product}/{channel}/{platform}/{arch}/{version}/{name}` | 本机安装包（仅 published）；桌面更新 / 官网直链 |
-| POST | `/api/v1/updates/hit` | `{ product?, channel?, platform, arch, version? }` 计次；`version` 空则记最新 published |
+| GET | `/api/v1/updates/download` | 同上查询参数；点击当下解析最新 published，记 `update_hits`，**302** 到版本化安装包。响应 `Cache-Control: no-store` |
+| GET | `/api/v1/updates/files/{product}/{channel}/{platform}/{arch}/{version}/{name}` | 本机安装包（仅 published）；桌面更新 / 302 落地地址，可缓存 |
+| POST | `/api/v1/updates/hit` | `{ product?, channel?, platform, arch, version? }` 仅计次不代理文件；`version` 空则记最新 published。桌面端在拉版本化文件前调用；`/updates/download` 已计次，官网不必再打本接口 |
 
 ## Pipeline（流水线 Token）
 
@@ -87,16 +88,16 @@ GitHub Actions 在打完安装包后：**先把文件传到本机**，再登记 
 | POST | `/api/v1/ops/auth/logout` | 吊销当前 refresh 并清 Cookie |
 | POST | `/api/v1/ops/auth/password` | 修改自己的密码（吊销旧会话并重签） |
 | GET | `/api/v1/ops/stats` | `users` / `feedback` / `feedbackLast7d` / `downloadHits` |
-| GET | `/api/v1/ops/audit-logs` | 审计 |
-| GET / POST | `/api/v1/ops/staff` | 员工列表 / 创建（创建需 admin） |
+| GET | `/api/v1/ops/audit-logs` | 审计；`action` / `actorKind` / `actorId` / `resourceKind` / `resourceId` 等值；`limit`（默认 20，上限 50）/ `offset` |
+| GET / POST | `/api/v1/ops/staff` | 员工列表 / 创建（创建需 admin）；列表：`id` / `email` / `displayName` / `status` / `role` 等值；`limit` / `offset` |
 | PATCH | `/api/v1/ops/staff/{id}` | 启停、显示名、角色（需 admin） |
 | POST | `/api/v1/ops/staff/{id}/password` | 重置员工密码（需 admin） |
-| GET / POST | `/api/v1/ops/users` | 终端用户列表 / 创建（创建需 admin） |
+| GET / POST | `/api/v1/ops/users` | 终端用户列表 / 创建（创建需 admin）；列表：`id` / `email` / `displayName` / `status` 等值；`limit` / `offset` |
 | GET / PATCH | `/api/v1/ops/users/{id}` | 详情 / 启停（启停需 admin） |
 | POST | `/api/v1/ops/users/{id}/password` | 重置用户密码（需 admin） |
-| GET | `/api/v1/ops/feedback` | 工单列表 |
+| GET | `/api/v1/ops/feedback` | 工单列表；`id` / `title` / `contact` / `category` / `status` / `product` / `userId` / `clientVersion` 等值；`limit` / `offset` |
 | PATCH | `/api/v1/ops/feedback/{id}` | `{ status?, adminNote?, staffReply? }` |
-| GET / POST | `/api/v1/ops/releases` | 发布列表 / 新建草稿 |
+| GET / POST | `/api/v1/ops/releases` | 发布列表 / 新建草稿；列表：`product` / `channel` / `platform` / `arch` / `status` / `version` 等值；`limit` / `offset` |
 | GET / PATCH | `/api/v1/ops/releases/{id}` | 详情 / 编辑草稿 |
 | POST | `/api/v1/ops/releases/{id}/publish` | 发布 |
 | POST | `/api/v1/ops/releases/{id}/yank` | 撤回 |

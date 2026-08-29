@@ -157,7 +157,7 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 
-	mailLogOTP := true
+	mailLogOTP := false
 	if fc.SMTP.LogOTP != nil {
 		mailLogOTP = *fc.SMTP.LogOTP
 	}
@@ -172,26 +172,26 @@ func Load() (Config, error) {
 	}
 
 	cfg := Config{
-		HTTPAddr:           firstNonEmpty(fc.HTTPAddr, ":8090"),
-		HTTPTimeout:        time.Duration(intOr(fc.HTTPTimeoutMin, 5)) * time.Minute,
+		HTTPAddr:           firstNonEmpty(fc.HTTPAddr, "127.0.0.1:8090"),
+		HTTPTimeout:        time.Duration(intOr(fc.HTTPTimeoutMin, 30)) * time.Minute,
 		TrustProxy:         trustProxy,
 		ConfigDir:          cfgDir,
 		LogDir:             logDir,
 		DataDir:            dataDir,
 		DBDriver:           strings.ToLower(firstNonEmpty(fc.DB.Driver, "mysql")),
-		DBDSN:              strings.TrimSpace(fc.DB.DSN),
-		JWTSecret:          strings.TrimSpace(fc.JWT.Secret),
+		DBDSN:              firstNonEmpty(getenv("NIUMA_DB_DSN", ""), strings.TrimSpace(fc.DB.DSN)),
+		JWTSecret:          firstNonEmpty(getenv("NIUMA_JWT_SECRET", ""), strings.TrimSpace(fc.JWT.Secret)),
 		AccessTokenTTL:     time.Duration(intOr(fc.JWT.AccessTokenTTLMin, 30)) * time.Minute,
 		RefreshTokenTTL:    time.Duration(intOr(fc.JWT.RefreshTokenTTLDays, 30)) * 24 * time.Hour,
 		OTPTTL:             time.Duration(intOr(fc.OTP.TTLMin, 5)) * time.Minute,
 		OTPCooldown:        time.Duration(intOr(fc.OTP.CooldownSec, 60)) * time.Second,
 		OTPDailyLimit:      intOr(fc.OTP.DailyLimit, 20),
 		StaffEmail:         strings.ToLower(strings.TrimSpace(firstNonEmpty(fc.Staff.Email, "admin@niuma007.com"))),
-		StaffPassword:      firstNonEmpty(fc.Staff.Password, "ChangeMeAdmin1!"),
+		StaffPassword:      firstNonEmpty(getenv("NIUMA_STAFF_PASSWORD", ""), fc.Staff.Password),
 		SMTPHost:           strings.TrimSpace(fc.SMTP.Host),
 		SMTPPort:           intOr(fc.SMTP.Port, 587),
 		SMTPUser:           strings.TrimSpace(fc.SMTP.User),
-		SMTPPassword:       fc.SMTP.Password,
+		SMTPPassword:       firstNonEmpty(getenv("NIUMA_SMTP_PASSWORD", ""), fc.SMTP.Password),
 		SMTPFrom:           firstNonEmpty(fc.SMTP.From, "noreply@niuma007.com"),
 		MailLogOTP:         mailLogOTP,
 		FeedbackWebhookURL: strings.TrimSpace(fc.Feedback.WebhookURL),
@@ -213,10 +213,13 @@ func Load() (Config, error) {
 	}
 
 	if cfg.JWTSecret == "" || len(cfg.JWTSecret) < 16 {
-		return Config{}, fmt.Errorf("jwt.secret must be at least 16 characters")
+		return Config{}, fmt.Errorf("jwt.secret must be at least 16 characters (or set NIUMA_JWT_SECRET)")
+	}
+	if insecureExampleSecret(cfg.JWTSecret) && !allowInsecureDev() {
+		return Config{}, fmt.Errorf("jwt.secret looks like a documented example; set NIUMA_JWT_SECRET or replace jwt.secret")
 	}
 	if cfg.PipelineToken != "" && len(cfg.PipelineToken) < 16 {
-		return Config{}, fmt.Errorf("pipeline.token must be at least 16 characters")
+		return Config{}, fmt.Errorf("pipeline.token must be at least 16 characters (or set NIUMA_PIPELINE_TOKEN)")
 	}
 	if err := ensureRuntimeDirs(cfg.ReleasesDir); err != nil {
 		return Config{}, err
@@ -302,15 +305,33 @@ func ensureConfigFile(cfgDir string) error {
 }
 
 func defaultYAML() string {
-	return `http_addr: ":8090"
-
+	return `http_addr: "127.0.0.1:8090"
+http_timeout_min: 30
+jwt:
+  secret: "replace-with-NIUMA_JWT_SECRET"
 db:
   driver: mysql
   dsn: "user:pass@tcp(127.0.0.1:3306)/niuma_cloud?parseTime=true&charset=utf8mb4&loc=UTC"
-
-jwt:
-  secret: "dev-niuma-cloud-jwt-secret-change-me"
 `
+}
+
+// insecureExampleSecret 识别文档/样例里的占位密钥，防止原样上生产。
+func insecureExampleSecret(s string) bool {
+	low := strings.ToLower(strings.TrimSpace(s))
+	if low == "" {
+		return true
+	}
+	for _, m := range []string{"change-me", "changeme", "dev-niuma", "example", "replace-with-"} {
+		if strings.Contains(low, m) {
+			return true
+		}
+	}
+	return false
+}
+
+func allowInsecureDev() bool {
+	v := strings.ToLower(getenv("NIUMA_ALLOW_INSECURE_DEV", ""))
+	return v == "1" || v == "true" || v == "yes"
 }
 
 func getenv(key, fallback string) string {

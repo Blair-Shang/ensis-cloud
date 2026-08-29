@@ -113,6 +113,7 @@ func (s *Server) SeedStaff(ctx context.Context) error {
 //	POST /niuma/cloud/api/v1/feedback
 //	GET  /niuma/cloud/api/v1/feedback/mine|lookup
 //	GET  /niuma/cloud/api/v1/updates/latest|check|releases
+//	GET  /niuma/cloud/api/v1/updates/download   最新 published，302 到版本化安装包
 //	POST /niuma/cloud/api/v1/updates/hit
 //	GET  /niuma/cloud/api/v1/updates/files/...  本机安装包（仅 published）
 //	POST /niuma/cloud/api/v1/pipeline/releases/assets  流水线上传安装包
@@ -158,6 +159,7 @@ func (s *Server) registerCloudAPI(mux *http.ServeMux, p string) {
 	mux.HandleFunc("GET "+p+"/api/v1/updates/latest", s.handleUpdatesLatest)
 	mux.HandleFunc("GET "+p+"/api/v1/updates/check", s.handleUpdatesCheck)
 	mux.HandleFunc("GET "+p+"/api/v1/updates/releases", s.handleUpdatesReleases)
+	mux.HandleFunc("GET "+p+"/api/v1/updates/download", s.handleUpdatesDownload)
 	mux.HandleFunc("POST "+p+"/api/v1/updates/hit", s.handleUpdatesHit)
 	mux.HandleFunc("GET "+p+"/api/v1/updates/files/{product}/{channel}/{platform}/{arch}/{version}/{name}", s.handleUpdatesFile)
 	mux.HandleFunc("POST "+p+"/api/v1/pipeline/releases/assets", s.handlePipelineReleaseAsset)

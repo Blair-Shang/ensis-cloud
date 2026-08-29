@@ -1,5 +1,5 @@
 # niuma-cloud 持续集成：类型检查、Go 测试、Admin 构建。
-# 依赖同级仓库 niuma-ui（Vite / tsconfig 从源码引用）。
+# niuma-ui 从 npm 拉取（默认 latest），不 checkout 兄弟 Git 仓库。
 name: CI
 
 on:
@@ -28,14 +28,6 @@ jobs:
         with:
           path: niuma-cloud
 
-      - name: Checkout niuma-ui
-        uses: actions/checkout@v7
-        with:
-          repository: ${{ github.repository_owner }}/niuma-ui
-          ref: ${{ vars.NIUMA_UI_REF || 'v1.1.9' }}
-          path: niuma-ui
-          token: ${{ secrets.NIUMA_UI_TOKEN || github.token }}
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
@@ -47,9 +39,8 @@ jobs:
         with:
           node-version: '20'
           cache: pnpm
-          cache-dependency-path: |
-            niuma-cloud/pnpm-lock.yaml
-            niuma-ui/pnpm-lock.yaml
+          cache-dependency-path: niuma-cloud/pnpm-lock.yaml
+          registry-url: https://registry.npmjs.org
 
       - name: Setup Go
         uses: actions/setup-go@v7
@@ -59,8 +50,9 @@ jobs:
 
       - name: Install JS dependencies
         run: |
-          pnpm --dir ../niuma-ui install --frozen-lockfile
-          pnpm install --frozen-lockfile
+          UI="${{ vars.NIUMA_UI_VERSION || 'latest' }}"
+          pnpm pkg set "dependencies.@niuma/ui=npm:niuma-ui@${UI}"
+          pnpm install --no-frozen-lockfile
 
       - name: Typecheck and admin build
         run: pnpm build

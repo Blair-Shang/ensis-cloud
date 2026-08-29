@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { RsButton, RsInput, RsBadge, RsTable, type RsTableColumn } from '@/components/ui'
+import { RsButton, RsInput, RsBadge, RsSelect, RsTable, type RsTableColumn } from '@/components/ui'
+import OpsPager from '@/components/OpsPager.vue'
 import {
   createOpsStaff,
   fetchOpsStaff,
@@ -18,13 +19,29 @@ import {
   initialOf,
 } from '@/utils/format'
 
-const q = ref('')
+const email = ref('')
+const status = ref('all')
+const role = ref('all')
+const page = ref(1)
+const pageSize = 20
 const items = ref<OpsStaffAccount[]>([])
 const total = ref(0)
 const error = ref('')
 const loading = ref(false)
 const me = getStaff()
 const canAdmin = isOpsAdmin(me)
+
+const statusOptions = [
+  { label: '全部状态', value: 'all' },
+  { label: '正常', value: 'active' },
+  { label: '停用', value: 'disabled' },
+]
+
+const roleOptions = [
+  { label: '全部角色', value: 'all' },
+  { label: '超管', value: 'admin' },
+  { label: '运营', value: 'operator' },
+]
 
 const showCreate = ref(false)
 const createEmail = ref('')
@@ -52,7 +69,13 @@ async function load() {
   error.value = ''
   loading.value = true
   try {
-    const res = await fetchOpsStaff({ q: q.value, limit: 50 })
+    const res = await fetchOpsStaff({
+      email: email.value.trim() || undefined,
+      status: status.value === 'all' ? undefined : status.value,
+      role: role.value === 'all' ? undefined : role.value,
+      limit: pageSize,
+      offset: (page.value - 1) * pageSize,
+    })
     items.value = res.items
     total.value = res.total
   } catch (e) {
@@ -123,6 +146,11 @@ async function confirmReset() {
   }
 }
 
+function search() {
+  page.value = 1
+  void load()
+}
+
 onMounted(() => {
   void load()
 })
@@ -131,13 +159,10 @@ onMounted(() => {
 <template>
   <div>
     <div class="ops-toolbar">
-      <RsInput
-        v-model="q"
-        placeholder="搜索邮箱 / 显示名"
-        style="min-width: 260px"
-        @keydown.enter="load"
-      />
-      <RsButton variant="secondary" :loading="loading" @click="load">查询</RsButton>
+      <RsInput v-model="email" placeholder="邮箱（精确）" style="min-width: 200px" @keydown.enter="search" />
+      <RsSelect v-model="status" class="ops-select-ctl" :options="statusOptions" />
+      <RsSelect v-model="role" class="ops-select-ctl" :options="roleOptions" />
+      <RsButton variant="secondary" :loading="loading" @click="search">查询</RsButton>
       <div class="ops-toolbar__grow" />
       <div class="ops-toolbar__right">
         <RsButton v-if="canAdmin" variant="primary" @click="openCreate">新增员工</RsButton>
@@ -207,7 +232,7 @@ onMounted(() => {
         </template>
       </RsTable>
       <div class="ops-card__footer">
-        <span>共 {{ total }} 条</span>
+        <OpsPager :total="total" :page="page" :page-size="pageSize" @change="(p) => { page = p; void load() }" />
       </div>
     </div>
 

@@ -4,8 +4,14 @@ import type { OpsFeedback, OpsFeedbackListResult, OpsFeedbackPatch } from './typ
 const API_BASE = (import.meta.env.VITE_CLOUD_API_BASE || '/cloud').replace(/\/$/, '')
 
 export function fetchOpsFeedback(params?: {
+  id?: string
+  title?: string
+  contact?: string
+  category?: string
   status?: string
-  q?: string
+  product?: string
+  userId?: string
+  clientVersion?: string
   limit?: number
   offset?: number
 }): Promise<OpsFeedbackListResult> {

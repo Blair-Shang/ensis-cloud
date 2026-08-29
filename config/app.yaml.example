@@ -1,11 +1,11 @@
 # niuma-cloud 运行配置（复制为 app.yaml 后按环境修改；app.yaml 勿提交）
 # 仅 CONFIG_DIR 环境变量可覆盖配置目录，默认 ./config
 
-# HTTP 监听地址，如 :8090 或 0.0.0.0:8090
-http_addr: ":8090"
-# 前后端单次请求读写超时（分钟），默认 5；流水线上传安装包建议 30
+# HTTP 监听地址。生产只绑本机，由 Nginx 反代 443；勿把 8090 暴露公网
+http_addr: "127.0.0.1:8090"
+# 前后端单次请求读写超时（分钟），默认 30；流水线上传安装包需要
 http_timeout_min: 30
-# 是否信任反代的 X-Real-IP / X-Forwarded-For 末跳（生产 Nginx 后保持 true；勿把 :8090 直接暴露公网）
+# 是否信任反代的 X-Real-IP / X-Forwarded-For 末跳（生产 Nginx 后保持 true）
 trust_proxy: true
 
 # 数据库（生产使用 mysql；sqlite 仅本地临时调试）
@@ -13,12 +13,13 @@ db:
   # 驱动：mysql | sqlite
   driver: mysql
   # MySQL DSN：user:pass@tcp(host:port)/dbname?parseTime=true&charset=utf8mb4&loc=UTC
-  # 库不存在时启动会自动 CREATE DATABASE
-  dsn: "root:CHANGE_ME@tcp(127.0.0.1:3306)/niuma_cloud?parseTime=true&charset=utf8mb4&loc=UTC"
+  # 可用环境变量 NIUMA_DB_DSN 覆盖。生产用内网 + 最小权限账号，勿对公网开放 3306
+  dsn: "niuma:CHANGE_ME@tcp(127.0.0.1:3306)/niuma_cloud?parseTime=true&charset=utf8mb4&loc=UTC"
 
 # JWT / 会话签发
 jwt:
-  # 签名密钥，至少 16 字符；生产必须更换为长随机串
+  # 签名密钥，至少 16 字符；含 change-me / dev-niuma / example 时拒绝启动
+  # 生产优先环境变量 NIUMA_JWT_SECRET
   secret: "change-me-to-a-long-random-secret"
   # Access Token 有效期（分钟）
   access_token_ttl_min: 30
@@ -35,6 +36,8 @@ cors_origins:
   - https://niuma007.com
 
 # 首次启动若库中无员工账号则种子创建（已存在则跳过）
+# 仅库中无员工时种子创建。已有账号改这里无效，请在 Ops 改密。
+# 也可用 NIUMA_STAFF_PASSWORD
 staff:
   email: admin@niuma007.com
   password: ChangeMeAdmin1!
@@ -45,11 +48,12 @@ smtp:
   host: ""
   port: 465
   user: ""
+  # 可用 NIUMA_SMTP_PASSWORD 覆盖，避免授权码长期躺在 yaml
   password: ""
   # 发件人地址（须与授权账号一致或为其别名）
   from: noreply@niuma007.com
-  # true：无 SMTP 时 Info 打完整验证码；有 SMTP 时仅打后两位。生产务必 false
-  log_otp: true
+  # true：无 SMTP 时 Info 打完整验证码。生产必须 false（未写时默认 false）
+  log_otp: false
 
 # 邮箱验证码策略
 otp:
@@ -66,6 +70,7 @@ feedback:
   webhook_url: ""
 
 # 桌面应用内更新：download_url 域名约束；流水线落盘后地址为本站
+# 官网 / 投放请用稳定入口 /api/v1/updates/download（点击时解析最新 published）
 # 空列表=仅禁 http/内网/IP（开发）；生产务必含官方域名
 updates:
   public_base: "https://www.niuma007.com/niuma/cloud"
@@ -80,6 +85,7 @@ updates:
 
 # GitHub Actions 等流水线：先上传安装包再登记发布；空则 pipeline 接口返回 503
 # 也可用环境变量 NIUMA_PIPELINE_TOKEN 覆盖（勿把生产 token 提交进仓库）
+# 也可用环境变量 NIUMA_PIPELINE_TOKEN（勿把生产 token 提交进仓库）
 pipeline:
   token: ""
 

@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { RsButton, RsInput, RsBadge, RsSelect, RsTable, type RsTableColumn } from '@/components/ui'
+import OpsPager from '@/components/OpsPager.vue'
 import { fetchOpsAuditLogs, type OpsAuditLog } from '@/api'
 import { actorKindLabel, detailText, formatApiError, formatDateTime } from '@/utils/format'
 
-const q = ref('')
+const actorId = ref('')
+const resourceId = ref('')
 const action = ref('all')
 const actorKind = ref('all')
+const page = ref(1)
+const pageSize = 20
 const items = ref<OpsAuditLog[]>([])
 const total = ref(0)
 const error = ref('')
@@ -50,10 +54,12 @@ async function load() {
   loading.value = true
   try {
     const res = await fetchOpsAuditLogs({
-      q: q.value || undefined,
+      actorId: actorId.value.trim() || undefined,
+      resourceId: resourceId.value.trim() || undefined,
       action: action.value === 'all' ? undefined : action.value,
       actorKind: actorKind.value === 'all' ? undefined : actorKind.value,
-      limit: 50,
+      limit: pageSize,
+      offset: (page.value - 1) * pageSize,
     })
     items.value = res.items
     total.value = res.total
@@ -65,6 +71,11 @@ async function load() {
   }
 }
 
+function search() {
+  page.value = 1
+  void load()
+}
+
 onMounted(() => {
   void load()
 })
@@ -73,12 +84,8 @@ onMounted(() => {
 <template>
   <div>
     <div class="ops-toolbar">
-      <RsInput
-        v-model="q"
-        placeholder="搜索动作 / 资源 / 操作者"
-        style="min-width: 240px"
-        @keydown.enter="load"
-      />
+      <RsInput v-model="actorId" placeholder="操作者 ID（精确）" style="min-width: 180px" @keydown.enter="search" />
+      <RsInput v-model="resourceId" placeholder="资源 ID（精确）" style="min-width: 180px" @keydown.enter="search" />
       <RsSelect
         v-model="action"
         class="ops-select-ctl ops-select-ctl--wide"
@@ -91,9 +98,7 @@ onMounted(() => {
         :options="actorKindOptions"
         placeholder="全部操作者"
       />
-      <RsButton variant="secondary" :loading="loading" @click="load">筛选</RsButton>
-      <div class="ops-toolbar__grow" />
-      <span class="ops-muted">共 {{ total }} 条</span>
+      <RsButton variant="secondary" :loading="loading" @click="search">筛选</RsButton>
     </div>
 
     <div v-if="error" class="ops-alert">{{ error }}</div>
@@ -138,7 +143,7 @@ onMounted(() => {
         </template>
       </RsTable>
       <div class="ops-card__footer">
-        <span>共 {{ total }} 条</span>
+        <OpsPager :total="total" :page="page" :page-size="pageSize" @change="(p) => { page = p; void load() }" />
       </div>
     </div>
   </div>

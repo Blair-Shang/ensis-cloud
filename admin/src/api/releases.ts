@@ -12,6 +12,7 @@ export function fetchOpsReleases(params?: {
   platform?: string
   arch?: string
   status?: string
+  version?: string
   limit?: number
   offset?: number
 }): Promise<OpsReleaseListResult> {

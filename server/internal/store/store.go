@@ -16,6 +16,34 @@ func New(db *sql.DB, driver string) *Store {
 	return &Store{db: db, driver: strings.ToLower(driver)}
 }
 
+const (
+	defaultPageSize = 20
+	maxPageSize     = 50
+)
+
+// clampPage 运营列表分页：默认 20，上限 50，避免一次拉全表。
+func clampPage(limit, offset int) (int, int) {
+	if limit <= 0 {
+		limit = defaultPageSize
+	}
+	if limit > maxPageSize {
+		limit = maxPageSize
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	return limit, offset
+}
+
+func appendEq(where *[]string, args *[]any, col, val string) {
+	val = strings.TrimSpace(val)
+	if val == "" {
+		return
+	}
+	*where = append(*where, col+" = ?")
+	*args = append(*args, val)
+}
+
 func nowUTC() time.Time {
 	return time.Now().UTC().Truncate(time.Millisecond)
 }
@@ -66,6 +94,8 @@ func (t *dbTime) parse(s string) error {
 	layouts := []string{
 		time.RFC3339Nano,
 		time.RFC3339,
+		// SQLite TEXT 写入 time.Time 时常见为 Go 默认 String()
+		"2006-01-02 15:04:05.999999999 -0700 MST",
 		"2006-01-02 15:04:05.999999999",
 		"2006-01-02 15:04:05.999",
 		"2006-01-02 15:04:05",

@@ -13,6 +13,7 @@ import {
   RsMarkdown,
   type RsTableColumn,
 } from '@/components/ui'
+import OpsPager from '@/components/OpsPager.vue'
 import {
   createOpsRelease,
   fetchOpsReleases,
@@ -23,8 +24,13 @@ import {
 } from '@/api'
 import { formatApiError, formatDateTime } from '@/utils/format'
 
+const version = ref('')
 const statusFilter = ref('all')
 const platformFilter = ref('all')
+const channelFilter = ref('all')
+const archFilter = ref('all')
+const page = ref(1)
+const pageSize = 20
 const items = ref<OpsRelease[]>([])
 const total = ref(0)
 const error = ref('')
@@ -94,6 +100,18 @@ const platformOptions = [
   { label: 'macOS', value: 'macos' },
 ]
 
+const channelOptions = [
+  { label: '全部渠道', value: 'all' },
+  { label: 'stable', value: 'stable' },
+  { label: 'beta', value: 'beta' },
+]
+
+const archOptions = [
+  { label: '全部架构', value: 'all' },
+  { label: 'x64', value: 'x64' },
+  { label: 'arm64', value: 'arm64' },
+]
+
 const formPlatformOptions = [
   { label: 'Windows', value: 'windows' },
   { label: 'Linux', value: 'linux' },
@@ -145,9 +163,13 @@ async function load() {
   loading.value = true
   try {
     const res = await fetchOpsReleases({
-      status: statusFilter.value,
+      version: version.value.trim() || undefined,
+      status: statusFilter.value === 'all' ? undefined : statusFilter.value,
       platform: platformFilter.value === 'all' ? undefined : platformFilter.value,
-      limit: 50,
+      channel: channelFilter.value === 'all' ? undefined : channelFilter.value,
+      arch: archFilter.value === 'all' ? undefined : archFilter.value,
+      limit: pageSize,
+      offset: (page.value - 1) * pageSize,
     })
     items.value = res.items
     total.value = res.total
@@ -270,6 +292,11 @@ async function onConfirmAction() {
   }
 }
 
+function search() {
+  page.value = 1
+  void load()
+}
+
 onMounted(() => {
   void load()
 })
@@ -278,17 +305,14 @@ onMounted(() => {
 <template>
   <div>
     <div class="ops-toolbar">
-      <RsSelect v-model="statusFilter" :options="statusOptions" style="width: 140px" @update:model-value="load" />
-      <RsSelect
-        v-model="platformFilter"
-        :options="platformOptions"
-        style="width: 140px"
-        @update:model-value="load"
-      />
-      <RsButton variant="secondary" :loading="loading" @click="load">刷新</RsButton>
+      <RsInput v-model="version" placeholder="版本（精确，如 1.0.1）" style="min-width: 160px" @keydown.enter="search" />
+      <RsSelect v-model="statusFilter" :options="statusOptions" style="width: 140px" />
+      <RsSelect v-model="platformFilter" :options="platformOptions" style="width: 140px" />
+      <RsSelect v-model="channelFilter" :options="channelOptions" style="width: 140px" />
+      <RsSelect v-model="archFilter" :options="archOptions" style="width: 130px" />
+      <RsButton variant="secondary" :loading="loading" @click="search">筛选</RsButton>
       <div class="ops-toolbar__grow" />
       <div class="ops-toolbar__right">
-        <span class="ops-muted">共 {{ total }} 条</span>
         <RsButton variant="primary" @click="openCreate">新建发布</RsButton>
       </div>
     </div>
@@ -351,6 +375,9 @@ onMounted(() => {
           </div>
         </template>
       </RsTable>
+      <div class="ops-card__footer">
+        <OpsPager :total="total" :page="page" :page-size="pageSize" @change="(p) => { page = p; void load() }" />
+      </div>
     </div>
 
     <RsDialog

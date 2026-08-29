@@ -2,7 +2,10 @@ import { get } from './request'
 import type { OpsUserDetail, OpsUserListResult } from './types'
 
 export function fetchOpsUsers(params?: {
-  q?: string
+  id?: string
+  email?: string
+  displayName?: string
+  status?: string
   limit?: number
   offset?: number
 }): Promise<OpsUserListResult> {

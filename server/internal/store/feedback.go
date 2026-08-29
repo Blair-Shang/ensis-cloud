@@ -117,27 +117,35 @@ func (s *Store) ListFeedbackByUser(ctx context.Context, userID string, limit int
 	return scanFeedbackRows(rows)
 }
 
-func (s *Store) ListFeedback(ctx context.Context, status, q string, limit, offset int) ([]Feedback, int, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
-	}
-	if offset < 0 {
-		offset = 0
-	}
-	status = strings.TrimSpace(status)
-	q = strings.TrimSpace(q)
+// FeedbackListFilter 工单列表：字段等值，正文不再 LIKE 全表扫描。
+type FeedbackListFilter struct {
+	ID            string
+	Title         string
+	Contact       string
+	Category      string
+	Status        string
+	Product       string
+	UserID        string
+	ClientVersion string
+	Limit         int
+	Offset        int
+}
 
+func (s *Store) ListFeedback(ctx context.Context, f FeedbackListFilter) ([]Feedback, int, error) {
+	limit, offset := clampPage(f.Limit, f.Offset)
 	where := []string{"1=1"}
 	args := []any{}
-	if status != "" {
-		where = append(where, "ticket_status = ?")
-		args = append(args, status)
+	appendEq(&where, &args, "id", f.ID)
+	appendEq(&where, &args, "subject", f.Title)
+	if contact := strings.ToLower(strings.TrimSpace(f.Contact)); contact != "" {
+		where = append(where, "LOWER(contact_email) = ?")
+		args = append(args, contact)
 	}
-	if q != "" {
-		where = append(where, "(id = ? OR subject LIKE ? OR content_text LIKE ? OR contact_email LIKE ? OR reporter_user_id LIKE ?)")
-		like := "%" + q + "%"
-		args = append(args, q, like, like, like, like)
-	}
+	appendEq(&where, &args, "category_code", f.Category)
+	appendEq(&where, &args, "ticket_status", f.Status)
+	appendEq(&where, &args, "product_code", f.Product)
+	appendEq(&where, &args, "reporter_user_id", f.UserID)
+	appendEq(&where, &args, "client_version", f.ClientVersion)
 	whereSQL := strings.Join(where, " AND ")
 
 	var total int

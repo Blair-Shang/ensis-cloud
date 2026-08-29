@@ -69,10 +69,10 @@ func main() {
 	}
 	api.SetStatic(static)
 
-	// 前后端交互超时来自 app.yaml http_timeout_min（默认 5 分钟）
+	// 前后端交互超时来自 app.yaml http_timeout_min（默认 30 分钟）
 	reqTimeout := cfg.HTTPTimeout
 	if reqTimeout <= 0 {
-		reqTimeout = 5 * time.Minute
+		reqTimeout = 30 * time.Minute
 	}
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,

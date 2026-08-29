@@ -1,5 +1,15 @@
 # 部署（www.niuma007.com 路径分流）
 
+## 上线前加固
+
+1. **密钥**：`jwt.secret` / 流水线 token / SMTP 授权码不要用文档里的样例。优先环境变量（见 `config/app.env.example`）：`NIUMA_JWT_SECRET`、`NIUMA_PIPELINE_TOKEN`、`NIUMA_SMTP_PASSWORD`、`NIUMA_DB_DSN`。含 `change-me` / `dev-niuma` / `example` 的 JWT 会拒绝启动。
+2. **`smtp.log_otp`**：生产必须 `false`（未写时默认 false）。
+3. **监听**：`http_addr: "127.0.0.1:8090"`，只让 Nginx 443 对外。`trust_proxy: true`。
+4. **MySQL**：安全组只放行应用机；不要用公网 3306 + `root`。DSN 可用 `NIUMA_DB_DSN`。
+5. **超时**：`http_timeout_min: 30`。`updates.public_base` 与 `download_url_hosts` 必须含官方域名。
+6. **员工密码**：`staff.password` 只在库里还没有员工时种子生效；已有账号在 Ops 改密。
+7. **Nginx**：`http { }` 里声明 `niuma_dl_latest` / `niuma_dl_conn`；对 `/updates/download` 限请求、对 `/updates/files/` 限连接与带宽。改完 `nginx -t && nginx -s reload`。
+
 ## 反代示意
 
 ```text
@@ -13,28 +23,11 @@ https://www.niuma007.com/niuma/*    → niuma-cloud :8090
 
 Nginx 示例：
 
+完整片段见 `config/nginx-locations.conf` 与官网仓 `config/conf.d/niuma-site.conf`。`http { }` 须先声明：
+
 ```nginx
-upstream niuma_cloud {
-  server 127.0.0.1:8090;
-  keepalive 16;
-}
-
-location = /niuma {
-  return 302 /niuma/ops/;
-}
-
-location /niuma/ {
-  client_max_body_size 2g;
-  proxy_pass http://127.0.0.1:8090;
-  proxy_set_header Host $host;
-  proxy_set_header X-Real-IP $remote_addr;
-  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-  proxy_set_header X-Forwarded-Proto $scheme;
-  proxy_request_buffering off;
-  proxy_buffering off;
-  proxy_read_timeout 1800s;
-  proxy_send_timeout 1800s;
-}
+limit_req_zone  $binary_remote_addr zone=niuma_dl_latest:10m rate=8r/s;
+limit_conn_zone $binary_remote_addr zone=niuma_dl_conn:10m;
 ```
 
 客户端配置：
@@ -48,13 +41,17 @@ GitHub 流水线（NiuMa `Pack and Release`）：
 - 仓库 Secrets：`NIUMA_CLOUD_PIPELINE_TOKEN`（与上相同）
 - 可选 Variables：`NIUMA_CLOUD_API_BASE`（默认 `https://www.niuma007.com/niuma/cloud`）
 - 流水线先 `POST /api/v1/pipeline/releases/assets` 把安装包落到 `{data_dir}/releases/`，再登记 published
-- 对外下载：`https://www.niuma007.com/niuma/cloud/api/v1/updates/files/{product}/{channel}/{platform}/{arch}/{version}/{name}`
+- 对外「永远最新」下载（官网 / 投放）：`https://www.niuma007.com/niuma/cloud/api/v1/updates/download?product=niuma&channel=stable&platform=windows&arch=x64`
+- Linux / macOS 尚未稳定：官网与流水线使用 `channel=beta`（如 `platform=linux&arch=x64`、`platform=macos&arch=arm64`）
+- 版本化落地（桌面更新、CDN 缓存）：`https://www.niuma007.com/niuma/cloud/api/v1/updates/files/{product}/{channel}/{platform}/{arch}/{version}/{name}`
 - `updates.public_base` 默认即上述域名；`http_timeout_min` 建议 ≥ 30（上传/下载大包）
 - Nginx `/niuma/` 须 `client_max_body_size 2g` 且读写超时约 1800s；改完后 `nginx -s reload`
 - 磁盘：按平台保留历史版本，注意 `data/releases` 容量
-- 官网首页下载：把 niuma-site `download.windows_url` 填成对应 files 地址（与桌面更新同一条链）
+- 官网 hit 默认 302 到 `/updates/download`，不必再改 `download.windows_url`；该字段仅作 cloud 关闭时的应急直链
 
 ## MySQL
+
+安全组 / 防火墙只允许应用机访问 3306，不要对 `0.0.0.0/0` 开放。应用账号不要用 `root`。
 
 `config/app.yaml`（已 gitignore，勿提交；仓库只保留 `config/app.yaml.example`）：
 

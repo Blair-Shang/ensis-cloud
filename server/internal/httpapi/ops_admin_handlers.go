@@ -20,11 +20,13 @@ func (s *Server) handleOpsAuditLogs(w http.ResponseWriter, r *http.Request) {
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 	items, total, err := s.store.ListAuditLogs(r.Context(), store.AuditListFilter{
-		ActionCode: r.URL.Query().Get("action"),
-		ActorKind:  r.URL.Query().Get("actorKind"),
-		Q:          r.URL.Query().Get("q"),
-		Limit:      limit,
-		Offset:     offset,
+		ActionCode:   r.URL.Query().Get("action"),
+		ActorKind:    r.URL.Query().Get("actorKind"),
+		ActorID:      r.URL.Query().Get("actorId"),
+		ResourceKind: r.URL.Query().Get("resourceKind"),
+		ResourceID:   r.URL.Query().Get("resourceId"),
+		Limit:        limit,
+		Offset:       offset,
 	})
 	if err != nil {
 		s.log.Error("list audit logs", zap.Error(err))
@@ -43,7 +45,15 @@ func (s *Server) handleOpsStaffList(w http.ResponseWriter, r *http.Request) {
 	}
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	items, total, err := s.store.ListStaff(r.Context(), r.URL.Query().Get("q"), limit, offset)
+	items, total, err := s.store.ListStaff(r.Context(), store.StaffListFilter{
+		ID:          r.URL.Query().Get("id"),
+		Email:       r.URL.Query().Get("email"),
+		DisplayName: r.URL.Query().Get("displayName"),
+		Status:      r.URL.Query().Get("status"),
+		Role:        r.URL.Query().Get("role"),
+		Limit:       limit,
+		Offset:      offset,
+	})
 	if err != nil {
 		s.log.Error("list staff", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "server_error")

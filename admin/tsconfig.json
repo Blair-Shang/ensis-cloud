@@ -14,7 +14,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@niuma-ui-src/*": ["../../niuma-ui/src/*"]
+      "@niuma-ui-src/*": ["../node_modules/@niuma/ui/src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.vue", "src/**/*.d.ts"]

@@ -4,9 +4,31 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
-发版时把 `[Unreleased]` 下的条目移入新的 `## [x.y.z] - YYYY-MM-DD` 段；GitHub Release 正文由该段生成。`package.json` 的 `version`、git tag（`v*`）与本文件版本号必须一致。
+发版时把 `[Unreleased]` 下的条目移入新的 `## [x.y.z] - YYYY-MM-DD` 段；GitHub Release 正文由该段生成。`package.json` 的 `version`、git tag（`v*`）与本文件版本号必须一致。公开基线为 **1.1.0**。
 
 ## [Unreleased]
+
+## [1.1.0] - 2026-08-30
+
+### 新增
+
+- 公开 `GET /api/v1/updates/download`：按产品维度解析当前 latest published，记 `update_hits`，再 302 到版本化安装包。供官网与投放使用稳定「最新包」地址，避免发版后改配置。
+- 该响应用 `Cache-Control: no-store`，防止浏览器把「最新」缓存成旧版本；落地仍走可缓存的 `/updates/files/...`。
+- Ops 列表（用户 / 员工 / 反馈 / 发布 / 审计）：按字段等值筛选 + 分页（默认 20，上限 50），去掉模糊 `LIKE`，避免扫全表。
+- 启动拒绝文档里的样例 JWT；`NIUMA_JWT_SECRET` / `NIUMA_DB_DSN` / `NIUMA_SMTP_PASSWORD` / `NIUMA_PIPELINE_TOKEN` 可覆盖 yaml。`log_otp` 默认 false，默认监听 `127.0.0.1:8090`。
+
+### 修复
+
+- SQLite 读取发布记录时兼容 `time.Time.String()` 格式的时间戳，避免本地库扫描 `published_at` 失败。
+
+### 变更
+
+- CI / 打包改为 npm 安装 `niuma-ui@latest`，不再 checkout 兄弟 Git 仓库。
+
+### 说明
+
+- 桌面端继续 `/updates/check` + 版本化 `files` + `POST /updates/hit`。`/updates/download` 已计次，官网跳转不必再打 hit。
+- Linux / macOS 尚未稳定：官网与流水线使用 `channel=beta`；Windows 为 `stable`。
 
 ## [0.1.0] - 2026-08-29
 
@@ -20,3 +42,7 @@
 ### 安全
 
 - `config/app.yaml` 不入库，仓库只提交 `config/app.yaml.example`。
+
+[Unreleased]: https://github.com/Blair-Shang/niuma-cloud/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v1.1.0
+[0.1.0]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v0.1.0

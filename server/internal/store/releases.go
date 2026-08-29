@@ -65,6 +65,7 @@ type ReleaseListFilter struct {
 	Platform string
 	Arch     string
 	Status   string
+	Version  string
 	Limit    int
 	Offset   int
 }
@@ -134,32 +135,14 @@ func (s *Store) GetReleaseByDim(ctx context.Context, product, channel, platform,
 }
 
 func (s *Store) ListReleases(ctx context.Context, f ReleaseListFilter) ([]AppRelease, int, error) {
-	limit := f.Limit
-	if limit <= 0 || limit > 100 {
-		limit = 50
-	}
-	offset := f.Offset
-	if offset < 0 {
-		offset = 0
-	}
+	limit, offset := clampPage(f.Limit, f.Offset)
 	where := []string{"1=1"}
 	args := []any{}
-	if p := strings.TrimSpace(f.Product); p != "" {
-		where = append(where, "product_code = ?")
-		args = append(args, p)
-	}
-	if c := strings.TrimSpace(f.Channel); c != "" {
-		where = append(where, "channel_code = ?")
-		args = append(args, c)
-	}
-	if p := strings.TrimSpace(f.Platform); p != "" {
-		where = append(where, "platform_code = ?")
-		args = append(args, p)
-	}
-	if a := strings.TrimSpace(f.Arch); a != "" {
-		where = append(where, "arch_code = ?")
-		args = append(args, a)
-	}
+	appendEq(&where, &args, "product_code", f.Product)
+	appendEq(&where, &args, "channel_code", f.Channel)
+	appendEq(&where, &args, "platform_code", f.Platform)
+	appendEq(&where, &args, "arch_code", f.Arch)
+	appendEq(&where, &args, "version_label", f.Version)
 	if st := strings.TrimSpace(f.Status); st != "" && st != "all" {
 		where = append(where, "release_status = ?")
 		args = append(args, st)

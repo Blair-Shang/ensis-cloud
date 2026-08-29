@@ -526,6 +526,20 @@ button {
   font-size: 13px;
 }
 
+.ops-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.ops-pager__btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* 列表统一使用 @niuma/ui 的 RsTable；这里只保留单元格内容样式 */
 .rs-table a {
   color: var(--ops-accent);

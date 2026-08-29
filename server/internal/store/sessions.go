@@ -152,44 +152,43 @@ func (s *Store) CreateStaff(ctx context.Context, u StaffUser) error {
 	return nil
 }
 
-func (s *Store) ListStaff(ctx context.Context, q string, limit, offset int) ([]StaffUser, int, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
+// StaffListFilter 员工列表：字段等值。
+type StaffListFilter struct {
+	ID          string
+	Email       string
+	DisplayName string
+	Status      string
+	Role        string
+	Limit       int
+	Offset      int
+}
+
+func (s *Store) ListStaff(ctx context.Context, f StaffListFilter) ([]StaffUser, int, error) {
+	limit, offset := clampPage(f.Limit, f.Offset)
+	where := []string{"1=1"}
+	args := []any{}
+	appendEq(&where, &args, "id", f.ID)
+	if email := strings.ToLower(strings.TrimSpace(f.Email)); email != "" {
+		where = append(where, "email = ?")
+		args = append(args, email)
 	}
-	if offset < 0 {
-		offset = 0
-	}
-	q = strings.TrimSpace(q)
+	appendEq(&where, &args, "display_name", f.DisplayName)
+	appendEq(&where, &args, "account_status", f.Status)
+	appendEq(&where, &args, "staff_role", f.Role)
+	clause := strings.Join(where, " AND ")
 
 	var total int
-	var err error
-	if q == "" {
-		err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM staff_users`).Scan(&total)
-	} else {
-		like := "%" + q + "%"
-		err = s.db.QueryRowContext(ctx, `
-			SELECT COUNT(*) FROM staff_users WHERE email LIKE ? OR display_name LIKE ?`, like, like).Scan(&total)
-	}
-	if err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM staff_users WHERE `+clause, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
-	var rows *sql.Rows
-	if q == "" {
-		rows, err = s.db.QueryContext(ctx, `
+	queryArgs := append(append([]any{}, args...), limit, offset)
+	rows, err := s.db.QueryContext(ctx, `
 			SELECT id, email, password_hash, display_name, account_status, staff_role, created_at, updated_at
 			FROM staff_users
+			WHERE `+clause+`
 			ORDER BY created_at DESC
-			LIMIT ? OFFSET ?`, limit, offset)
-	} else {
-		like := "%" + q + "%"
-		rows, err = s.db.QueryContext(ctx, `
-			SELECT id, email, password_hash, display_name, account_status, staff_role, created_at, updated_at
-			FROM staff_users
-			WHERE email LIKE ? OR display_name LIKE ?
-			ORDER BY created_at DESC
-			LIMIT ? OFFSET ?`, like, like, limit, offset)
-	}
+			LIMIT ? OFFSET ?`, queryArgs...)
 	if err != nil {
 		return nil, 0, err
 	}

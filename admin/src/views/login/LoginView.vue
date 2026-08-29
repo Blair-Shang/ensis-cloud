@@ -12,6 +12,8 @@ const password = ref('')
 const error = ref('')
 const loading = ref(false)
 
+const markSrc = `${import.meta.env.BASE_URL}favicon.svg`
+
 const canSubmit = computed(
   () => email.value.trim().includes('@') && password.value.length >= 10 && !loading.value,
 )
@@ -54,7 +56,7 @@ async function submit() {
     <div class="login__glow" aria-hidden="true" />
     <div class="login__panel">
       <aside class="login__brand">
-        <img class="login__mark" src="/favicon.svg" width="40" height="40" alt="" />
+        <img class="login__mark" :src="markSrc" width="40" height="40" alt="" />
         <p class="login__eyebrow">NiuMa Cloud</p>
         <h1 class="login__title">Ops</h1>
         <p class="login__lead">账户、反馈与产品运营控制台。仅限内部员工。</p>

@@ -50,6 +50,7 @@ func (s *Server) handleOpsReleaseList(w http.ResponseWriter, r *http.Request) {
 		Platform: r.URL.Query().Get("platform"),
 		Arch:     r.URL.Query().Get("arch"),
 		Status:   r.URL.Query().Get("status"),
+		Version:  r.URL.Query().Get("version"),
 		Limit:    limit,
 		Offset:   offset,
 	})

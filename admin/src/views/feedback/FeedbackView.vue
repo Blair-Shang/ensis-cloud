@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RsButton, RsInput, RsBadge, RsSelect, RsTable, type RsTableColumn } from '@/components/ui'
+import OpsPager from '@/components/OpsPager.vue'
 import {
   fetchOpsFeedback,
   fetchOpsFeedbackAttachmentURL,
@@ -16,8 +17,12 @@ import {
   formatFileSize,
 } from '@/utils/format'
 
+const ticketId = ref('')
+const contact = ref('')
 const status = ref('all')
-const q = ref('')
+const category = ref('all')
+const page = ref(1)
+const pageSize = 20
 const items = ref<OpsFeedback[]>([])
 const total = ref(0)
 const error = ref('')
@@ -79,6 +84,13 @@ const statusFilterOptions = [
   { label: '已关闭', value: 'closed' },
 ]
 
+const categoryFilterOptions = [
+  { label: '全部分类', value: 'all' },
+  { label: '缺陷', value: 'bug' },
+  { label: '建议', value: 'feature' },
+  { label: '其他', value: 'other' },
+]
+
 const statusEditOptions = [
   { label: '待处理', value: 'open' },
   { label: '处理中', value: 'triaged' },
@@ -103,9 +115,12 @@ async function load() {
   loading.value = true
   try {
     const res = await fetchOpsFeedback({
+      id: ticketId.value.trim() || undefined,
+      contact: contact.value.trim() || undefined,
+      category: category.value === 'all' ? undefined : category.value,
       status: status.value === 'all' ? undefined : status.value,
-      q: q.value || undefined,
-      limit: 50,
+      limit: pageSize,
+      offset: (page.value - 1) * pageSize,
     })
     items.value = res.items
     total.value = res.total
@@ -162,6 +177,11 @@ function copyTicketId() {
   copyId(id)
 }
 
+function search() {
+  page.value = 1
+  void load()
+}
+
 onMounted(() => {
   void load()
 })
@@ -170,21 +190,21 @@ onMounted(() => {
 <template>
   <div>
     <div class="ops-toolbar">
-      <RsInput
-        v-model="q"
-        placeholder="搜索工单号 / 标题 / 正文 / 联系方式"
-        style="min-width: 300px"
-        @keydown.enter="load"
-      />
+      <RsInput v-model="ticketId" placeholder="工单号（精确）" style="min-width: 200px" @keydown.enter="search" />
+      <RsInput v-model="contact" placeholder="联系邮箱（精确）" style="min-width: 180px" @keydown.enter="search" />
       <RsSelect
         v-model="status"
         class="ops-select-ctl"
         :options="statusFilterOptions"
         placeholder="全部状态"
       />
-      <RsButton variant="secondary" :loading="loading" @click="load">筛选</RsButton>
-      <div class="ops-toolbar__grow" />
-      <span class="ops-muted">共 {{ total }} 条</span>
+      <RsSelect
+        v-model="category"
+        class="ops-select-ctl"
+        :options="categoryFilterOptions"
+        placeholder="全部分类"
+      />
+      <RsButton variant="secondary" :loading="loading" @click="search">筛选</RsButton>
     </div>
 
     <div v-if="error && !editing" class="ops-alert">{{ error }}</div>
@@ -253,7 +273,7 @@ onMounted(() => {
         </template>
       </RsTable>
       <div class="ops-card__footer">
-        <span>共 {{ total }} 条</span>
+        <OpsPager :total="total" :page="page" :page-size="pageSize" @change="(p) => { page = p; void load() }" />
       </div>
     </div>
 

@@ -16,6 +16,7 @@ func TestIsCloudAPIPath(t *testing.T) {
 		"/niuma/cloud/healthz",
 		"/niuma/cloud/api/v1/me",
 		"/niuma/cloud/api/v1/updates/hit",
+		"/niuma/cloud/api/v1/updates/download",
 	}
 	for _, p := range ok {
 		if !isCloudAPIPath(p) {
