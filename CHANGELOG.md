@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+### 变更
+
+- Admin 从 `@niuma/ui` 包入口具名导入，不再走源码路径别名；与 niuma-ui ≥ 1.2.0 编译包对齐后不再需要 `shamefully-hoist`。
+- CI / 打包从 npm 安装 `niuma-ui@latest`（可用 `NIUMA_UI_VERSION` 钉死）。本机仍用 `link:../niuma-ui` 联调。
+
 ## [1.1.1] - 2026-08-30
 
 ### 修复

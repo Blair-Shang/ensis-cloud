@@ -25,6 +25,26 @@ function resolveNiumaUiRoot(): string {
 
 const niumaUiRoot = resolveNiumaUiRoot()
 const niumaUiSrc = resolve(niumaUiRoot, 'src')
+const niumaUiDist = resolve(niumaUiRoot, 'dist/index.js')
+
+/**
+ * 本机 `pnpm dev` 走兄弟仓源码以便 HMR。
+ * 生产构建优先用 dist（与 npm 安装一致）；尚未 `pnpm --dir ../niuma-ui build` 时回退源码。
+ */
+function niumaUiAliases(command: string) {
+  if (!existsSync(niumaUiSrc)) return []
+  if (command !== 'serve' && existsSync(niumaUiDist)) return []
+  return [
+    {
+      find: '@niuma/ui/styles.css',
+      replacement: resolve(niumaUiSrc, 'styles.css'),
+    },
+    {
+      find: /^@niuma\/ui$/,
+      replacement: resolve(niumaUiSrc, 'index.ts'),
+    },
+  ]
+}
 
 /** 浏览器默认请求 /favicon.ico（不带 /ops 前缀），开发时回落到 svg */
 function faviconFallback(): Plugin {
@@ -62,20 +82,13 @@ function faviconFallback(): Plugin {
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   root: __dirname,
   base: '/niuma/ops/',
   plugins: [vue(), tailwindcss(), faviconFallback()],
   resolve: {
     alias: [
-      {
-        find: '@niuma/ui/styles.css',
-        replacement: resolve(niumaUiSrc, 'styles.css'),
-      },
-      {
-        find: '@niuma-ui-src',
-        replacement: niumaUiSrc,
-      },
+      ...niumaUiAliases(command),
       {
         find: '@',
         replacement: resolve(__dirname, 'src'),
@@ -109,4 +122,4 @@ export default defineConfig({
     emptyOutDir: true,
     target: 'es2022',
   },
-})
+}))

@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       niuma_ui_version:
-        description: npm 上的 niuma-ui 版本（如 latest 或 1.1.11）
+        description: npm 上的 niuma-ui 版本（如 latest 或 1.2.0）
         type: string
         default: 'latest'
 
