@@ -63,7 +63,7 @@ function faviconFallback(): Plugin {
 }
 
 /**
- * niumaUiHost：dev 联调用到的源码；build / CI 走 npm dist。
+ * niumaUiHost：只服务 pnpm dev（源码 HMR）。vite build 走包主入口。
  * 不要把 @niuma/ui 别名到 src/index.ts。
  */
 export default defineConfig({

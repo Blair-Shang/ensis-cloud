@@ -8,6 +8,12 @@
 
 ## [Unreleased]
 
+## [1.1.6] - 2026-08-30
+
+### 修复
+
+- Admin 对齐 niuma-ui **1.2.5**：打包走包主入口，不再依赖 `niumaUiHost` 改写导入。Ops 生产构建不再因 Vue SFC / 桶导出失败。
+
 ## [1.1.5] - 2026-08-30
 
 ### 变更
@@ -75,12 +81,3 @@
 ### 安全
 
 - `config/app.yaml` 不入库，仓库只提交 `config/app.yaml.example`。
-
-[Unreleased]: https://github.com/Blair-Shang/niuma-cloud/compare/v1.1.5...HEAD
-[1.1.5]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v1.1.5
-[1.1.4]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v1.1.4
-[1.1.3]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v1.1.3
-[1.1.2]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v1.1.2
-[1.1.1]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v1.1.1
-[1.1.0]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v1.1.0
-[0.1.0]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v0.1.0
