@@ -8,6 +8,13 @@
 
 ## [Unreleased]
 
+## [1.1.5] - 2026-08-30
+
+### 变更
+
+- Admin 对齐 niuma-ui **1.2.4**：设计系统 `styles.css` 自己收口 `box-sizing`，Ops 生产宽高不再只赌本仓 Tailwind Preflight。
+- 随 niuma-ui **1.2.2**，`niumaUiHost` 能解析 npm `dist` 桶导出名。CI 装 `@latest` 后 `vite build` 不再把 Rs* 收成 type-only 而报 `MISSING_EXPORT`。
+
 ## [1.1.4] - 2026-08-30
 
 ### 修复
@@ -69,7 +76,11 @@
 
 - `config/app.yaml` 不入库，仓库只提交 `config/app.yaml.example`。
 
-[Unreleased]: https://github.com/Blair-Shang/niuma-cloud/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/Blair-Shang/niuma-cloud/compare/v1.1.5...HEAD
+[1.1.5]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v1.1.5
+[1.1.4]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v1.1.4
+[1.1.3]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v1.1.3
+[1.1.2]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v1.1.2
 [1.1.1]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v1.1.1
 [1.1.0]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v1.1.0
 [0.1.0]: https://github.com/Blair-Shang/niuma-cloud/releases/tag/v0.1.0
