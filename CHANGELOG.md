@@ -8,6 +8,12 @@
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-08-30
+
+### 修复
+
+- Admin CSS 重新 `@import 'tailwindcss'`，让扫描根在 `admin/src`。依赖 `niuma-ui` 1.2.3 起把 `RsTable` 等脚本旁路 CSS 打进 npm，生产表格不再掉皮。
+
 ## [1.1.3] - 2026-08-30
 
 ### 变更

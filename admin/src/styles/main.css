@@ -1,3 +1,6 @@
+/* 本文件自己 @import tailwindcss，让扫描根在 admin/src；token 仍走 niuma-ui/styles.css。 */
+@import 'tailwindcss';
+
 :root {
   --ops-bg: #f0f2f5;
   --ops-panel: #ffffff;
