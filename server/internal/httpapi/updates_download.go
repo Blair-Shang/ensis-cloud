@@ -17,8 +17,8 @@ import (
 // 记一次 update_hits，再 302 到带版本号的安装包地址。
 //
 // 官网 / 投放链接应指向本接口，而不是页面加载时缓存的 downloadUrl。
-// 本响应禁止缓存，避免浏览器把「最新」钉在旧版本。不走 updateCD：
-// 真实下载不应被清单探针冷却打断（与 handleUpdatesFile 一致）。
+// 本响应禁止缓存，避免浏览器把「最新」钉在旧版本。
+// IP 限流在 Nginx（niuma_dl_latest），本进程不按 IP 记账。
 func (s *Server) handleUpdatesDownload(w http.ResponseWriter, r *http.Request) {
 	product, channel, platform, arch, err := parseUpdateQuery(r, false)
 	if err != nil {

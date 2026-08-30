@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"time"
@@ -71,7 +72,7 @@ func (s *Server) issueOTP(w http.ResponseWriter, r *http.Request, purpose string
 			writeError(w, http.StatusInternalServerError, "server_error")
 			return
 		}
-	case "login", "reset":
+	case "reset":
 		if _, err := s.store.GetUserByEmail(r.Context(), email); err == store.ErrNotFound {
 			s.log.Info("auth otp skipped",
 				zap.String("email", email),
@@ -86,6 +87,7 @@ func (s *Server) issueOTP(w http.ResponseWriter, r *http.Request, purpose string
 			return
 		}
 	}
+	// login：无论账号是否存在都发码；complete 时不存在则建号。
 
 	code, err := auth.GenerateOTP()
 	if err != nil {
@@ -166,9 +168,8 @@ func (s *Server) handleRegisterComplete(w http.ResponseWriter, r *http.Request) 
 	now := time.Now().UTC().Format(time.RFC3339Nano)
 	name := strings.TrimSpace(req.DisplayName)
 	if name == "" {
-		name = strings.Split(email, "@")[0]
-	}
-	if utf8.RuneCountInString(name) > 64 {
+		name = displayNameFromEmail(email)
+	} else if utf8.RuneCountInString(name) > 64 {
 		name = string([]rune(name)[:64])
 	}
 	u := store.User{
@@ -274,15 +275,10 @@ func (s *Server) handleLoginOTPComplete(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusBadRequest, "invalid_otp")
 		return
 	}
-	u, err := s.store.GetUserByEmail(r.Context(), email)
+	u, created, err := s.provisionUserForOTPLogin(r.Context(), email)
 	if err != nil {
-		s.log.Warn("auth login failed",
-			zap.String("method", "otp"),
-			zap.String("email", email),
-			zap.String("ip", ip),
-			zap.String("reason", "invalid_credentials"),
-		)
-		writeError(w, http.StatusUnauthorized, "invalid_credentials")
+		s.log.Error("auth otp provision", zap.Error(err), zap.String("email", email))
+		writeError(w, http.StatusInternalServerError, "server_error")
 		return
 	}
 	if u.Status != "active" {
@@ -295,18 +291,82 @@ func (s *Server) handleLoginOTPComplete(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusForbidden, "account_disabled")
 		return
 	}
+	if created {
+		s.writeAudit(r.Context(), r, store.AuditLog{
+			ActorKind: "user", ActorID: u.ID,
+			ActionCode: "auth.register", ResourceKind: "user", ResourceID: u.ID,
+			Detail: map[string]any{"email": u.Email, "via": "otp_login"},
+		})
+	}
 	s.writeAudit(r.Context(), r, store.AuditLog{
 		ActorKind: "user", ActorID: u.ID,
 		ActionCode: "auth.login.otp", ResourceKind: "user", ResourceID: u.ID,
-		Detail: map[string]any{"email": u.Email},
+		Detail: map[string]any{"email": u.Email, "created": created},
 	})
 	s.log.Info("auth login ok",
 		zap.String("method", "otp"),
 		zap.String("user_id", u.ID),
 		zap.String("email", u.Email),
+		zap.Bool("created", created),
 		zap.String("ip", ip),
 	)
 	s.respondAuth(w, r, u)
+}
+
+// displayNameFromEmail 用邮箱本地部分作为默认显示名，最长 64 字符。
+func displayNameFromEmail(email string) string {
+	name := strings.SplitN(email, "@", 2)[0]
+	name = strings.TrimSpace(name)
+	if name == "" {
+		name = "user"
+	}
+	if utf8.RuneCountInString(name) > 64 {
+		return string([]rune(name)[:64])
+	}
+	return name
+}
+
+// provisionUserForOTPLogin 验证码校验通过后查找用户；不存在则创建无可用登录密码的账户。
+// 并发建号冲突时回读已有用户。新用户之后可通过「忘记密码」设置密码。
+func (s *Server) provisionUserForOTPLogin(ctx context.Context, email string) (*store.User, bool, error) {
+	u, err := s.store.GetUserByEmail(ctx, email)
+	if err == nil {
+		return u, false, nil
+	}
+	if err != store.ErrNotFound {
+		return nil, false, err
+	}
+	secret, err := auth.RandomToken(32)
+	if err != nil {
+		return nil, false, err
+	}
+	hash, err := auth.HashPassword(secret)
+	if err != nil {
+		return nil, false, err
+	}
+	id, err := auth.NewID("usr")
+	if err != nil {
+		return nil, false, err
+	}
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	created := store.User{
+		ID:              id,
+		Email:           email,
+		PasswordHash:    hash,
+		DisplayName:     displayNameFromEmail(email),
+		EmailVerifiedAt: &now,
+		Status:          "active",
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+	if err := s.store.CreateUser(ctx, created); err != nil {
+		if err == store.ErrConflict {
+			existing, getErr := s.store.GetUserByEmail(ctx, email)
+			return existing, false, getErr
+		}
+		return nil, false, err
+	}
+	return &created, true, nil
 }
 
 type resetReq struct {

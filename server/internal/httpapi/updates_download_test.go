@@ -107,6 +107,25 @@ func TestHandleUpdatesDownloadFallbackURL(t *testing.T) {
 	}
 }
 
+func TestHandleUpdatesHitStats(t *testing.T) {
+	s, st, _ := testUpdateServer(t, "")
+	if _, err := st.IncrementUpdateHit(t.Context(), "niuma", "stable", "windows", "x64", "1.0.0"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.IncrementUpdateHit(t.Context(), "niuma", "beta", "linux", "x64", "1.0.0"); err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodGet, "/niuma/cloud/api/v1/updates/hits?product=niuma", nil)
+	rec := httptest.NewRecorder()
+	s.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"total":2`) {
+		t.Fatalf("body=%s", rec.Body.String())
+	}
+}
+
 func TestHandleUpdatesDownloadNotFound(t *testing.T) {
 	s, _, _ := testUpdateServer(t, "")
 	req := httptest.NewRequest(http.MethodGet, "/niuma/cloud/api/v1/updates/download?platform=windows&arch=x64", nil)

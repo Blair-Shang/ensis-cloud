@@ -24,7 +24,6 @@ type Server struct {
 	tokens     *auth.TokenIssuer
 	otpCD      *ratelimit.CoolDown // OTP 发送冷却
 	authCD     *ratelimit.CoolDown // 密码 / Ops 登录节流
-	updateCD   *ratelimit.CoolDown // 公开 updates 探针节流
 	pipelineCD *ratelimit.CoolDown // 流水线推送节流
 	fbCreateCD *ratelimit.CoolDown // 公开提单节流
 	fbLookupCD *ratelimit.CoolDown // 匿名查询节流
@@ -45,7 +44,6 @@ func New(cfg config.Config, st *store.Store, mailer *mail.Mailer, logger *zap.Lo
 		tokens:     auth.NewTokenIssuer(cfg.JWTSecret, cfg.AccessTokenTTL),
 		otpCD:      ratelimit.NewCoolDown(cfg.OTPCooldown),
 		authCD:     ratelimit.NewCoolDown(2 * time.Second),
-		updateCD:   ratelimit.NewCoolDown(200 * time.Millisecond),
 		pipelineCD: ratelimit.NewCoolDown(2 * time.Second),
 		fbCreateCD: ratelimit.NewCoolDown(30 * time.Second),
 		fbLookupCD: ratelimit.NewCoolDown(2 * time.Second),
@@ -161,6 +159,7 @@ func (s *Server) registerCloudAPI(mux *http.ServeMux, p string) {
 	mux.HandleFunc("GET "+p+"/api/v1/updates/releases", s.handleUpdatesReleases)
 	mux.HandleFunc("GET "+p+"/api/v1/updates/download", s.handleUpdatesDownload)
 	mux.HandleFunc("POST "+p+"/api/v1/updates/hit", s.handleUpdatesHit)
+	mux.HandleFunc("GET "+p+"/api/v1/updates/hits", s.handleUpdatesHitStats)
 	mux.HandleFunc("GET "+p+"/api/v1/updates/files/{product}/{channel}/{platform}/{arch}/{version}/{name}", s.handleUpdatesFile)
 	mux.HandleFunc("POST "+p+"/api/v1/pipeline/releases/assets", s.handlePipelineReleaseAsset)
 	mux.HandleFunc("POST "+p+"/api/v1/pipeline/releases", s.handlePipelineReleases)

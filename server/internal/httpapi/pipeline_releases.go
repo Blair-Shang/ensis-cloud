@@ -65,12 +65,9 @@ func secureTokenEqual(want, got string) bool {
 }
 
 // handlePipelineReleases 流水线专用：按版本维度 upsert 并默认直接 publish。
+// 已校验 pipeline token，不再按 IP 做 2s 冷却。一次发版会连登 beta 与 stable，冷却会误伤第二次。
 func (s *Server) handlePipelineReleases(w http.ResponseWriter, r *http.Request) {
 	if !s.requirePipelineToken(w, r) {
-		return
-	}
-	if s.pipelineCD != nil && !s.pipelineCD.Allow("pipe:"+hashIP(s.requestIP(r))) {
-		writeError(w, http.StatusTooManyRequests, "rate_limited")
 		return
 	}
 	var req pipelineReleasesReq

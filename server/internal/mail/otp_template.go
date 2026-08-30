@@ -26,7 +26,7 @@ func otpCopyFor(purpose string) otpCopy {
 		return otpCopy{
 			Subject: "NiuMa 登录验证码",
 			Title:   "验证码登录",
-			Lead:    "你正在使用邮箱验证码登录 NiuMa。请使用以下验证码完成登录：",
+			Lead:    "你正在使用邮箱验证码登录或注册 NiuMa。若该邮箱尚未注册，验证通过后将自动创建账户。请使用以下验证码：",
 			Action:  "登录验证",
 		}
 	case "reset":

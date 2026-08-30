@@ -11,7 +11,7 @@ import (
 )
 
 // handleUpdatesFile 公开下载本机安装包；仅 published 记录对应文件。
-// 不走 updateCD：大文件下载与 Range 续传不应被探针冷却打断。
+// 大文件由 Nginx 限连接与带宽，本进程不按 IP 记账。
 func (s *Server) handleUpdatesFile(w http.ResponseWriter, r *http.Request) {
 	if s.files == nil || s.store == nil {
 		writeError(w, http.StatusInternalServerError, "server_error")

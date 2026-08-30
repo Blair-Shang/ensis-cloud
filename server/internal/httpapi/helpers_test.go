@@ -3,8 +3,25 @@ package httpapi
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
+
+func TestDisplayNameFromEmail(t *testing.T) {
+	if got := displayNameFromEmail("alice@example.com"); got != "alice" {
+		t.Fatalf("got %q", got)
+	}
+	if got := displayNameFromEmail("  Bob@Example.COM  "); got != "Bob" {
+		t.Fatalf("trim local: got %q", got)
+	}
+	if got := displayNameFromEmail("@orphan.com"); got != "user" {
+		t.Fatalf("empty local: got %q", got)
+	}
+	long := strings.Repeat("汉", 70) + "@x.com"
+	if got := displayNameFromEmail(long); got != strings.Repeat("汉", 64) {
+		t.Fatalf("truncate: got %q", got)
+	}
+}
 
 func TestValidPassword(t *testing.T) {
 	ok := []string{"ChangeMeAdmin1!", "abcdefghij1"}

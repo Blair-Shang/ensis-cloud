@@ -15,10 +15,6 @@ import (
 // 服务端不拉取 download_url（无 SSRF）。
 
 func (s *Server) handleUpdatesLatest(w http.ResponseWriter, r *http.Request) {
-	if !s.allowUpdateProbe(r) {
-		writeError(w, http.StatusTooManyRequests, "rate_limited")
-		return
-	}
 	product, channel, platform, arch, err := parseUpdateQuery(r, false)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
@@ -38,10 +34,6 @@ func (s *Server) handleUpdatesLatest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleUpdatesCheck(w http.ResponseWriter, r *http.Request) {
-	if !s.allowUpdateProbe(r) {
-		writeError(w, http.StatusTooManyRequests, "rate_limited")
-		return
-	}
 	product, channel, platform, arch, err := parseUpdateQuery(r, false)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
@@ -92,10 +84,6 @@ func (s *Server) handleUpdatesCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleUpdatesReleases(w http.ResponseWriter, r *http.Request) {
-	if !s.allowUpdateProbe(r) {
-		writeError(w, http.StatusTooManyRequests, "rate_limited")
-		return
-	}
 	product, channel, platform, arch, err := parseUpdateQuery(r, false)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
@@ -130,14 +118,6 @@ func parseUpdateQuery(r *http.Request, platformOptional bool) (product, channel,
 	return normalizeReleaseDims(product, channel, platform, arch)
 }
 
-func (s *Server) allowUpdateProbe(r *http.Request) bool {
-	if s.updateCD == nil {
-		return true
-	}
-	// 按 IP 节流，防止刷清单；正常客户端不受影响
-	return s.updateCD.Allow("upd:" + hashIP(s.requestIP(r)))
-}
-
 type updateHitReq struct {
 	Product  string `json:"product"`
 	Channel  string `json:"channel"`
@@ -148,10 +128,6 @@ type updateHitReq struct {
 
 // handleUpdatesHit 记录一次安装包拉起/下载（不代理文件）。version 空则记最新 published。
 func (s *Server) handleUpdatesHit(w http.ResponseWriter, r *http.Request) {
-	if !s.allowUpdateProbe(r) {
-		writeError(w, http.StatusTooManyRequests, "rate_limited")
-		return
-	}
 	var req updateHitReq
 	if err := decodeJSON(w, r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_json")
@@ -197,5 +173,29 @@ func (s *Server) handleUpdatesHit(w http.ResponseWriter, r *http.Request) {
 		"platform": platform,
 		"arch":     arch,
 		"version":  version,
+	})
+}
+
+// handleUpdatesHitStats 公开累计下载次数：官网 /updates/download 与桌面 POST /updates/hit 同一本账。
+func (s *Server) handleUpdatesHitStats(w http.ResponseWriter, r *http.Request) {
+	if s.store == nil {
+		writeError(w, http.StatusInternalServerError, "server_error")
+		return
+	}
+	product := strings.TrimSpace(r.URL.Query().Get("product"))
+	if product == "" {
+		product = "niuma"
+	}
+	st, err := s.store.SumUpdateHits(r.Context(), product)
+	if err != nil {
+		s.log.Error("sum update hits", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "server_error")
+		return
+	}
+	w.Header().Set("Cache-Control", "public, max-age=15")
+	writeJSON(w, http.StatusOK, map[string]any{
+		"product":    product,
+		"total":      st.Total,
+		"byPlatform": st.ByPlatform,
 	})
 }

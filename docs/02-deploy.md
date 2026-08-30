@@ -8,7 +8,7 @@
 4. **MySQL**：安全组只放行应用机；不要用公网 3306 + `root`。DSN 可用 `NIUMA_DB_DSN`。
 5. **超时**：`http_timeout_min: 30`。`updates.public_base` 与 `download_url_hosts` 必须含官方域名。
 6. **员工密码**：`staff.password` 只在库里还没有员工时种子生效；已有账号在 Ops 改密。
-7. **Nginx**：`http { }` 里声明 `niuma_dl_latest` / `niuma_dl_conn`；对 `/updates/download` 限请求、对 `/updates/files/` 限连接与带宽。改完 `nginx -t && nginx -s reload`。
+7. **Nginx**：`http { }` 里声明 `niuma_dl_latest` / `niuma_dl_conn`；对 `/updates/latest|check|releases|download|hit` 限请求、对 `/updates/files/` 限连接与带宽。Go 不按 IP 记账。改完 `nginx -t && nginx -s reload`。
 
 ## 反代示意
 
@@ -26,7 +26,7 @@ Nginx 示例：
 完整片段见 `config/nginx-locations.conf` 与官网仓 `config/conf.d/niuma-site.conf`。`http { }` 须先声明：
 
 ```nginx
-limit_req_zone  $binary_remote_addr zone=niuma_dl_latest:10m rate=8r/s;
+limit_req_zone  $binary_remote_addr zone=niuma_dl_latest:10m rate=60r/s;
 limit_conn_zone $binary_remote_addr zone=niuma_dl_conn:10m;
 ```
 
