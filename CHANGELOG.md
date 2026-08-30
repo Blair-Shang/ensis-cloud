@@ -8,6 +8,13 @@
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-08-30
+
+### 变更
+
+- Admin 业务 CSS 不再自己 `@import 'tailwindcss'`，改由 `niuma-ui/styles.css` 透传。
+- Admin 启用 `niumaUiHost`，不再把 `@niuma/ui` 别名到 `src/index.ts`。
+
 ## [1.1.2] - 2026-08-30
 
 ### 变更

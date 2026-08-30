@@ -1,6 +1,7 @@
 import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
+import { niumaUiHost } from '@niuma/ui/vite-plugins/niuma-ui-host'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { existsSync, readFileSync } from 'node:fs'
@@ -24,27 +25,6 @@ function resolveNiumaUiRoot(): string {
 }
 
 const niumaUiRoot = resolveNiumaUiRoot()
-const niumaUiSrc = resolve(niumaUiRoot, 'src')
-const niumaUiDist = resolve(niumaUiRoot, 'dist/index.js')
-
-/**
- * 本机 `pnpm dev` 走兄弟仓源码以便 HMR。
- * 生产构建优先用 dist（与 npm 安装一致）；尚未 `pnpm --dir ../niuma-ui build` 时回退源码。
- */
-function niumaUiAliases(command: string) {
-  if (!existsSync(niumaUiSrc)) return []
-  if (command !== 'serve' && existsSync(niumaUiDist)) return []
-  return [
-    {
-      find: '@niuma/ui/styles.css',
-      replacement: resolve(niumaUiSrc, 'styles.css'),
-    },
-    {
-      find: /^@niuma\/ui$/,
-      replacement: resolve(niumaUiSrc, 'index.ts'),
-    },
-  ]
-}
 
 /** 浏览器默认请求 /favicon.ico（不带 /ops 前缀），开发时回落到 svg */
 function faviconFallback(): Plugin {
@@ -82,13 +62,16 @@ function faviconFallback(): Plugin {
   }
 }
 
-export default defineConfig(({ command }) => ({
+/**
+ * niumaUiHost：dev 联调用到的源码；build / CI 走 npm dist。
+ * 不要把 @niuma/ui 别名到 src/index.ts。
+ */
+export default defineConfig({
   root: __dirname,
   base: '/niuma/ops/',
-  plugins: [vue(), tailwindcss(), faviconFallback()],
+  plugins: [vue(), tailwindcss(), ...niumaUiHost(), faviconFallback()],
   resolve: {
     alias: [
-      ...niumaUiAliases(command),
       {
         find: '@',
         replacement: resolve(__dirname, 'src'),
@@ -122,4 +105,4 @@ export default defineConfig(({ command }) => ({
     emptyOutDir: true,
     target: 'es2022',
   },
-}))
+})
