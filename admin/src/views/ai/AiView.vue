@@ -24,9 +24,11 @@ import {
   fetchOpsAIModels,
   patchOpsAIEndpoint,
   patchOpsAIModel,
+  pullOpsAIModels,
   testOpsAIEndpoint,
   type OpsAIEndpoint,
   type OpsAIModel,
+  type OpsAIRemoteModel,
 } from '@/api'
 import { formatApiError, formatDateTime } from '@/utils/format'
 import {
@@ -71,6 +73,12 @@ const testing = ref(false)
 const testOk = ref<boolean | null>(null)
 const testMessage = ref('')
 const seedingModels = ref(false)
+const pulling = ref(false)
+const pullOk = ref<boolean | null>(null)
+const pullMessage = ref('')
+const remoteModels = ref<OpsAIRemoteModel[]>([])
+const remoteFilter = ref('')
+const pendingRemote = ref<string[]>([])
 
 const modelCode = ref('')
 const modelLabel = ref('')
@@ -85,6 +93,8 @@ const vendorOptions = AI_PROVIDER_PRESETS.map((p) => ({ label: p.label, value: p
 
 const activePreset = computed(() => findAIProviderPreset(formVendor.value))
 
+const catalogCodes = computed(() => new Set(models.value.map((m) => m.code)))
+
 const defaultModelOptions = computed(() => {
   const ids = new Set<string>()
   for (const code of activePreset.value?.models ?? []) {
@@ -93,15 +103,29 @@ const defaultModelOptions = computed(() => {
   for (const row of models.value) {
     if (row.code) ids.add(row.code)
   }
+  for (const row of remoteModels.value) {
+    if (row.id) ids.add(row.id)
+  }
   if (formDefault.value.trim()) ids.add(formDefault.value.trim())
   return [...ids].map((code) => ({ label: code, value: code }))
 })
 
+const filteredRemote = computed(() => {
+  const q = remoteFilter.value.trim().toLowerCase()
+  if (!q) return remoteModels.value
+  return remoteModels.value.filter(
+    (m) => m.id.toLowerCase().includes(q) || m.label.toLowerCase().includes(q),
+  )
+})
+
+const hasUpstreamCred = computed(
+  () => Boolean(formSecret.value.trim() || (!isCreate.value && selectedId.value)),
+)
+
+const canPull = computed(() => Boolean(formBase.value.trim()) && hasUpstreamCred.value)
+
 const canTest = computed(
-  () =>
-    Boolean(formBase.value.trim()) &&
-    Boolean(formDefault.value.trim()) &&
-    Boolean(formSecret.value.trim() || (!isCreate.value && selectedId.value)),
+  () => canPull.value && Boolean(formDefault.value.trim()),
 )
 
 const editorTitle = computed(() => (isCreate.value ? '新增接入点' : '编辑接入点'))
@@ -178,6 +202,21 @@ function clearTest() {
   testMessage.value = ''
 }
 
+function clearPull() {
+  pullOk.value = null
+  pullMessage.value = ''
+  remoteModels.value = []
+  remoteFilter.value = ''
+  pendingRemote.value = []
+}
+
+function onUpstreamChange() {
+  clearTest()
+  remoteModels.value = []
+  pullOk.value = null
+  pullMessage.value = ''
+}
+
 function resetForm() {
   formVendor.value = AI_PROVIDER_PRESET_CUSTOM
   formName.value = 'NiuMa'
@@ -192,6 +231,7 @@ function resetForm() {
   modelLabel.value = ''
   models.value = []
   clearTest()
+  clearPull()
 }
 
 function applyPreset(id: string, fillName: boolean) {
@@ -202,6 +242,7 @@ function applyPreset(id: string, fillName: boolean) {
   if (preset.defaultModel) formDefault.value = preset.defaultModel
   if (fillName && preset.defaultName) formName.value = preset.defaultName
   clearTest()
+  clearPull()
 }
 
 function onVendorChange(value: string) {
@@ -243,6 +284,7 @@ async function openEdit(row: OpsAIEndpoint) {
   modelLabel.value = ''
   error.value = ''
   clearTest()
+  clearPull()
   showEditor.value = true
   formLoading.value = true
   try {
@@ -283,7 +325,13 @@ async function save() {
     }
     await load()
     if (selectedId.value) await loadModels(selectedId.value)
-    if (createdNow && selectedId.value) await seedRecommendedModels(selectedId.value)
+    if (createdNow && selectedId.value) {
+      if (pendingRemote.value.length) {
+        await seedCodes(selectedId.value, pendingRemote.value)
+      } else {
+        await seedRecommendedModels(selectedId.value)
+      }
+    }
   } catch (e) {
     const msg = mapErr(e)
     if (msg) error.value = msg
@@ -351,15 +399,16 @@ async function testConnection() {
   }
 }
 
-async function seedRecommendedModels(endpointId: string) {
-  const codes = activePreset.value?.models ?? []
+async function seedCodes(endpointId: string, codes: readonly string[]) {
   if (!codes.length) return
   seedingModels.value = true
   try {
     const existing = new Set(models.value.map((m) => m.code))
-    for (const code of codes) {
+    for (const raw of codes) {
+      const code = raw.trim()
       if (!code || existing.has(code)) continue
-      await createOpsAIModel(endpointId, { code, label: code })
+      const label = remoteModels.value.find((m) => m.id === code)?.label || code
+      await createOpsAIModel(endpointId, { code, label })
       existing.add(code)
     }
     await loadModels(endpointId)
@@ -371,10 +420,77 @@ async function seedRecommendedModels(endpointId: string) {
   }
 }
 
+async function seedRecommendedModels(endpointId: string) {
+  await seedCodes(endpointId, activePreset.value?.models ?? [])
+}
+
 function pickRecommended(code: string) {
   formDefault.value = code
   modelCode.value = code
   modelLabel.value = code
+}
+
+async function pullModels() {
+  if (!canPull.value) return
+  pulling.value = true
+  error.value = ''
+  pullOk.value = null
+  pullMessage.value = ''
+  try {
+    const result = await pullOpsAIModels({
+      endpointId: !isCreate.value && selectedId.value ? selectedId.value : undefined,
+      baseUrl: formBase.value.trim(),
+      apiSecret: formSecret.value.trim() || undefined,
+    })
+    remoteModels.value = result.items ?? []
+    pullOk.value = result.ok
+    pullMessage.value = result.ok
+      ? `拉到 ${remoteModels.value.length} 个模型，${result.latencyMs} ms`
+      : result.message || `上游返回 ${result.status || '错误'}`
+  } catch (e) {
+    remoteModels.value = []
+    pullOk.value = false
+    const msg = mapErr(e)
+    if (msg) error.value = msg
+  } finally {
+    pulling.value = false
+  }
+}
+
+async function pickRemote(row: OpsAIRemoteModel) {
+  pickRecommended(row.id)
+  if (!pendingRemote.value.includes(row.id)) {
+    pendingRemote.value = [...pendingRemote.value, row.id]
+  }
+  if (!selectedId.value) return
+  if (catalogCodes.value.has(row.id)) return
+  addingModel.value = true
+  error.value = ''
+  try {
+    await createOpsAIModel(selectedId.value, { code: row.id, label: row.label || row.id })
+    await loadModels(selectedId.value)
+  } catch (e) {
+    const msg = mapErr(e)
+    if (msg) error.value = msg
+  } finally {
+    addingModel.value = false
+  }
+}
+
+async function seedFilteredRemote() {
+  if (!selectedId.value) {
+    for (const row of filteredRemote.value) {
+      if (!pendingRemote.value.includes(row.id)) pendingRemote.value = [...pendingRemote.value, row.id]
+    }
+    if (filteredRemote.value[0] && !formDefault.value.trim()) {
+      formDefault.value = filteredRemote.value[0].id
+    }
+    return
+  }
+  await seedCodes(
+    selectedId.value,
+    filteredRemote.value.map((m) => m.id),
+  )
 }
 
 async function addModel() {
@@ -545,7 +661,7 @@ onMounted(() => {
                 id="ai-base"
                 v-model="formBase"
                 placeholder="https://api.deepseek.com/v1"
-                @update:model-value="clearTest"
+                @update:model-value="onUpstreamChange"
               />
             </div>
             <div class="ops-field">
@@ -564,7 +680,7 @@ onMounted(() => {
                 v-model="formSecret"
                 type="password"
                 :placeholder="isCreate ? 'sk-…' : '留空保留原值'"
-                @update:model-value="clearTest"
+                @update:model-value="onUpstreamChange"
               />
             </div>
             <div class="ai-form__grid">
@@ -593,6 +709,56 @@ onMounted(() => {
                 </RsLabel>
                 <RsInput id="ai-sort" v-model="formSort" placeholder="0" />
               </div>
+            </div>
+            <div class="ai-form__pull">
+              <RsButton
+                variant="secondary"
+                size="sm"
+                :loading="pulling"
+                :disabled="!canPull"
+                @click="pullModels"
+              >
+                拉取模型
+              </RsButton>
+              <RsInput
+                v-if="remoteModels.length"
+                v-model="remoteFilter"
+                placeholder="筛选模型"
+                style="min-width: 160px; flex: 1"
+              />
+              <RsButton
+                v-if="filteredRemote.length"
+                size="sm"
+                variant="secondary"
+                :loading="seedingModels || addingModel"
+                @click="seedFilteredRemote"
+              >
+                {{ selectedId ? '写入筛选结果' : '保存时写入筛选结果' }}
+              </RsButton>
+              <span
+                v-if="pullMessage"
+                class="ai-form__test"
+                :class="pullOk ? 'ai-form__test--ok' : 'ai-form__test--fail'"
+              >
+                {{ pullMessage }}
+              </span>
+            </div>
+            <div v-if="filteredRemote.length" class="ai-form__rec ai-form__rec--remote">
+              <span class="ai-form__rec-label">上游模型</span>
+              <button
+                v-for="row in filteredRemote"
+                :key="row.id"
+                type="button"
+                class="ai-form__chip"
+                :class="{
+                  'ai-form__chip--on': formDefault === row.id,
+                  'ai-form__chip--in': catalogCodes.has(row.id) || pendingRemote.includes(row.id),
+                }"
+                :title="row.label !== row.id ? `${row.id} · ${row.label}` : row.id"
+                @click="pickRemote(row)"
+              >
+                {{ row.id }}
+              </button>
             </div>
             <div v-if="activePreset?.models.length" class="ai-form__rec">
               <span class="ai-form__rec-label">推荐模型</span>
@@ -783,11 +949,24 @@ onMounted(() => {
   gap: 12px;
 }
 
+.ai-form__pull {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .ai-form__rec {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
+}
+
+.ai-form__rec--remote {
+  max-height: 168px;
+  overflow: auto;
+  align-content: flex-start;
 }
 
 .ai-form__rec-label {
@@ -814,6 +993,12 @@ onMounted(() => {
   border-color: #91caff;
   background: #e6f4ff;
   color: #1677ff;
+}
+
+.ai-form__chip--in:not(.ai-form__chip--on) {
+  border-color: #b7eb8f;
+  background: #f6ffed;
+  color: #389e0d;
 }
 
 .ai-form__footer {

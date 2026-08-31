@@ -123,6 +123,7 @@ func (s *Server) SeedStaff(ctx context.Context) error {
 //	GET  /niuma/cloud/api/v1/ai/catalog
 //	POST /niuma/cloud/api/v1/ai/v1/chat/completions
 //	POST /niuma/cloud/api/v1/ops/ai/endpoints/test  Ops 探测上游
+//	POST /niuma/cloud/api/v1/ops/ai/endpoints/pull-models  Ops 拉上游模型目录
 //	*    /niuma/cloud/api/v1/ops/ai/*            系统模型接入点 / 目录 CRUD
 //	POST /niuma/cloud/api/v1/ops/auth/login|refresh|logout|password
 //	GET  /niuma/cloud/api/v1/ops/stats|audit-logs|staff|users|feedback|releases
@@ -222,6 +223,7 @@ func (s *Server) registerCloudAPI(mux *http.ServeMux, p string) {
 	mux.HandleFunc("GET "+p+"/api/v1/ops/ai/endpoints", s.handleOpsAIEndpointList)
 	mux.HandleFunc("POST "+p+"/api/v1/ops/ai/endpoints", s.handleOpsAIEndpointCreate)
 	mux.HandleFunc("POST "+p+"/api/v1/ops/ai/endpoints/test", s.handleOpsAIEndpointTest)
+	mux.HandleFunc("POST "+p+"/api/v1/ops/ai/endpoints/pull-models", s.handleOpsAIEndpointPullModels)
 	mux.HandleFunc("GET "+p+"/api/v1/ops/ai/endpoints/{id}", s.handleOpsAIEndpointGet)
 	mux.HandleFunc("GET "+p+"/api/v1/ops/ai/endpoints/{id}/secret", s.handleOpsAIEndpointSecret)
 	mux.HandleFunc("PATCH "+p+"/api/v1/ops/ai/endpoints/{id}", s.handleOpsAIEndpointPatch)

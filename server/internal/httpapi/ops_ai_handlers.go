@@ -461,6 +461,69 @@ func (s *Server) handleOpsAIModelDelete(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusOK, map[string]any{"deleted": true})
 }
 
+// resolvedAIUpstream 是 Ops 探测 / 拉模型时解析出的上游地址与密钥。
+type resolvedAIUpstream struct {
+	Base  string
+	Key   string
+	Model string
+}
+
+// resolveOpsAIUpstream 从表单或已存接入点取出可出站的 Base / 密钥 / 默认模型。
+func (s *Server) resolveOpsAIUpstream(r *http.Request, endpointID, base, secret, model string) (resolvedAIUpstream, string) {
+	out := resolvedAIUpstream{
+		Base:  strings.TrimSpace(base),
+		Key:   strings.TrimSpace(secret),
+		Model: strings.TrimSpace(model),
+	}
+	if id := strings.TrimSpace(endpointID); id != "" {
+		e, err := s.store.GetAIEndpoint(r.Context(), id)
+		if errors.Is(err, store.ErrNotFound) {
+			return out, "not_found"
+		}
+		if err != nil {
+			s.log.Error("ai resolve endpoint", zap.Error(err))
+			return out, "server_error"
+		}
+		if out.Base == "" {
+			out.Base = e.UpstreamBaseURL
+		}
+		if out.Model == "" {
+			out.Model = e.DefaultModelCode
+		}
+		if out.Key == "" {
+			plain, openErr := s.openSecret(e.APISecretCipher)
+			if openErr != nil {
+				s.log.Error("ai resolve decrypt", zap.Error(openErr))
+				return out, "server_error"
+			}
+			out.Key = strings.TrimSpace(plain)
+		}
+	}
+	if out.Base == "" {
+		return out, "invalid_endpoint"
+	}
+	if err := llm.ValidateUpstreamURL(out.Base); err != nil {
+		return out, "unsafe_upstream"
+	}
+	if out.Key == "" {
+		return out, "missing_secret"
+	}
+	return out, ""
+}
+
+func writeOpsAIResolveError(w http.ResponseWriter, code string) {
+	switch code {
+	case "not_found":
+		writeError(w, http.StatusNotFound, code)
+	case "server_error":
+		writeError(w, http.StatusInternalServerError, code)
+	case "invalid_endpoint", "unsafe_upstream", "missing_secret", "model_required":
+		writeError(w, http.StatusBadRequest, code)
+	default:
+		writeError(w, http.StatusBadRequest, code)
+	}
+}
+
 // handleOpsAIEndpointTest 用表单或已存密钥向上游发一条极短对话，供 Ops 验证连通。
 func (s *Server) handleOpsAIEndpointTest(w http.ResponseWriter, r *http.Request) {
 	st := s.requireStaff(w, r)
@@ -476,58 +539,56 @@ func (s *Server) handleOpsAIEndpointTest(w http.ResponseWriter, r *http.Request)
 		writeError(w, http.StatusBadRequest, "invalid_json")
 		return
 	}
-	base := strings.TrimSpace(req.BaseURL)
-	key := strings.TrimSpace(req.APISecret)
-	model := strings.TrimSpace(req.Model)
-	if id := strings.TrimSpace(req.EndpointID); id != "" {
-		e, err := s.store.GetAIEndpoint(r.Context(), id)
-		if errors.Is(err, store.ErrNotFound) {
-			writeError(w, http.StatusNotFound, "not_found")
-			return
-		}
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "server_error")
-			return
-		}
-		if base == "" {
-			base = e.UpstreamBaseURL
-		}
-		if model == "" {
-			model = e.DefaultModelCode
-		}
-		if key == "" {
-			plain, openErr := s.openSecret(e.APISecretCipher)
-			if openErr != nil {
-				s.log.Error("ai test decrypt", zap.Error(openErr))
-				writeError(w, http.StatusInternalServerError, "server_error")
-				return
-			}
-			key = strings.TrimSpace(plain)
-		}
-	}
-	if base == "" {
-		writeError(w, http.StatusBadRequest, "invalid_endpoint")
+	up, code := s.resolveOpsAIUpstream(r, req.EndpointID, req.BaseURL, req.APISecret, req.Model)
+	if code != "" {
+		writeOpsAIResolveError(w, code)
 		return
 	}
-	if err := llm.ValidateUpstreamURL(base); err != nil {
-		writeError(w, http.StatusBadRequest, "unsafe_upstream")
-		return
-	}
-	if model == "" {
+	if up.Model == "" {
 		writeError(w, http.StatusBadRequest, "model_required")
 		return
 	}
-	if key == "" {
-		writeError(w, http.StatusBadRequest, "missing_secret")
-		return
-	}
-	result := llm.ProbeChat(r.Context(), llm.Upstream{BaseURL: base, APIKey: key}, model, llm.NewSafeClient(llm.ProbeTimeout))
+	result := llm.ProbeChat(r.Context(), llm.Upstream{BaseURL: up.Base, APIKey: up.Key}, up.Model, llm.NewSafeClient(llm.ProbeTimeout))
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":        result.OK,
 		"status":    result.Status,
 		"latencyMs": result.Latency.Milliseconds(),
 		"message":   result.Message,
 		"model":     result.Model,
+	})
+}
+
+// handleOpsAIEndpointPullModels 向 OpenAI 兼容上游 GET /models，供 Ops 选择目录。
+func (s *Server) handleOpsAIEndpointPullModels(w http.ResponseWriter, r *http.Request) {
+	st := s.requireStaff(w, r)
+	if st == nil {
+		return
+	}
+	if s.aiTestCD != nil && !s.aiTestCD.Allow("ai-test|"+st.ID) {
+		writeError(w, http.StatusTooManyRequests, "rate_limited")
+		return
+	}
+	var req opsAIEndpointTestReq
+	if err := decodeJSON(w, r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_json")
+		return
+	}
+	up, code := s.resolveOpsAIUpstream(r, req.EndpointID, req.BaseURL, req.APISecret, req.Model)
+	if code != "" {
+		writeOpsAIResolveError(w, code)
+		return
+	}
+	result := llm.ListModels(r.Context(), llm.Upstream{BaseURL: up.Base, APIKey: up.Key}, llm.NewSafeClient(llm.ProbeTimeout))
+	items := result.Models
+	if items == nil {
+		items = []llm.RemoteModel{}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":        result.OK,
+		"status":    result.Status,
+		"latencyMs": result.Latency.Milliseconds(),
+		"message":   result.Message,
+		"items":     items,
 	})
 }
 

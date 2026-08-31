@@ -115,6 +115,7 @@ GitHub Actions 在打完安装包后：**先把文件传到本机**，再登记 
 | GET | `/api/v1/ops/ai/usage` | 按 UTC 日用量：`?day=YYYY-MM-DD`（默认今天）`email`（精确）`userId` `limit` `offset`；返回 `summary` / `trend`（近 7 日） / `top`（排行前 8） / `items` / `dailyRequestLimit` |
 | GET / POST | `/api/v1/ops/ai/endpoints` | 系统模型接入点列表 / 新建（密钥密文入库，列表仅 `hasApiSecret`） |
 | POST | `/api/v1/ops/ai/endpoints/test` | 探测上游：`{ baseUrl, apiSecret, model, endpointId? }`；仅公网 HTTPS；`ok/latencyMs/message`（不记用户配额，员工 3s 冷却） |
+| POST | `/api/v1/ops/ai/endpoints/pull-models` | 拉取上游 `GET /models`：同上鉴权与冷却；`ok/items[{id,label}]`，最多 300 条，不写入目录 |
 | GET / PATCH / DELETE | `/api/v1/ops/ai/endpoints/{id}` | 接入点详情 / 编辑 / 删除（级联目录） |
 | GET | `/api/v1/ops/ai/endpoints/{id}/secret` | 是否已配置密钥（`found`，不回显明文） |
 | GET / POST | `/api/v1/ops/ai/endpoints/{id}/models` | 模型目录列表 / 新增 |

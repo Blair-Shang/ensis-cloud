@@ -258,6 +258,19 @@ export type OpsAIEndpointTestResult = {
   model: string
 }
 
+export type OpsAIRemoteModel = {
+  id: string
+  label: string
+}
+
+export type OpsAIPullModelsResult = {
+  ok: boolean
+  status: number
+  latencyMs: number
+  message: string
+  items: OpsAIRemoteModel[]
+}
+
 /** GET /api/v1/ops/ai/usage 按日用量一行 */
 export type OpsAIUsageRow = {
   userId: string

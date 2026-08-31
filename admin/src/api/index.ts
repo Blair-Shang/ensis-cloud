@@ -33,6 +33,7 @@ export {
   patchOpsAIEndpoint,
   deleteOpsAIEndpoint,
   testOpsAIEndpoint,
+  pullOpsAIModels,
   fetchOpsAIModels,
   createOpsAIModel,
   patchOpsAIModel,

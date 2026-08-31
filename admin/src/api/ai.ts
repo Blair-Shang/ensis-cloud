@@ -5,6 +5,7 @@ import type {
   OpsAIEndpointTestResult,
   OpsAIEndpointWrite,
   OpsAIModel,
+  OpsAIPullModelsResult,
   OpsAIUsageResult,
 } from './types'
 
@@ -34,6 +35,10 @@ export function deleteOpsAIEndpoint(id: string): Promise<{ deleted: boolean }> {
 
 export function testOpsAIEndpoint(body: OpsAIEndpointTest): Promise<OpsAIEndpointTestResult> {
   return post<OpsAIEndpointTestResult>('/api/v1/ops/ai/endpoints/test', body)
+}
+
+export function pullOpsAIModels(body: OpsAIEndpointTest): Promise<OpsAIPullModelsResult> {
+  return post<OpsAIPullModelsResult>('/api/v1/ops/ai/endpoints/pull-models', body)
 }
 
 export function fetchOpsAIModels(endpointId: string): Promise<{ items: OpsAIModel[] }> {

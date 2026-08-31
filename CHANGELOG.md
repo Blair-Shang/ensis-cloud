@@ -11,7 +11,7 @@
 ## [1.1.8] - 2026-08-31
 
 ### 新增
-
+- Ops 接入点可「拉取模型」：`POST /api/v1/ops/ai/endpoints/pull-models` 读上游 OpenAI 兼容 `/models`，在表单里选默认模型或写入目录。
 - 系统模型：登录用户 `GET /api/v1/ai/catalog`、`POST /api/v1/ai/v1/chat/completions`（OpenAI 兼容代理）。上游密钥只存云端密文，客户端只用账号 token。
 - Ops「AI」：接入点 / 模型目录入库；厂商预设填充 Base URL 与推荐模型；对话框编辑；页脚「测试连接」（`POST /api/v1/ops/ai/endpoints/test`）。
 - Ops 用量监控：`GET /api/v1/ops/ai/usage` 按 UTC 日列出用户次数，附 `summary` / 近 7 日 `trend` / 排行 `top`。Admin「用量」用与对话围栏同一套内联 SVG（折线 + 柱状），概览增加当日调用卡片。
