@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"strings"
+	"unicode/utf8"
 )
 
 var (
@@ -34,11 +35,42 @@ type AppRelease struct {
 	UpdatedAt           string  `json:"updatedAt"`
 }
 
+// PublicNotesExcerptRunes 桌面更新框与官网默认展示的更新说明上限（按 Unicode 字计）。
+const PublicNotesExcerptRunes = 800
+
+// NotesExcerpt 把更新说明裁成公开摘要，避免对话框被整篇 changelog 撑爆。
+// 优先在段落或句末断开；truncated 表示还有全文。
+func NotesExcerpt(md string) (excerpt string, truncated bool) {
+	md = strings.TrimSpace(md)
+	if md == "" {
+		return "", false
+	}
+	if utf8.RuneCountInString(md) <= PublicNotesExcerptRunes {
+		return md, false
+	}
+	runes := []rune(md)
+	cut := string(runes[:PublicNotesExcerptRunes])
+	s := cut
+	if i := strings.LastIndex(cut, "\n\n"); i >= PublicNotesExcerptRunes/3 {
+		s = strings.TrimSpace(cut[:i])
+	} else if i := strings.LastIndexAny(cut, "\n。！？"); i >= PublicNotesExcerptRunes/3 {
+		s = strings.TrimSpace(cut[:i+1])
+	} else {
+		s = strings.TrimSpace(cut)
+	}
+	if s == "" {
+		s = strings.TrimSpace(cut)
+	}
+	return s + "…", true
+}
+
 // PublicRelease 公开面：不含 createdBy 等内部字段。
+// notesMd 仍是全文；notesExcerpt / notesTruncated 供桌面与官网默认折叠。
 func PublicRelease(r *AppRelease) map[string]any {
 	if r == nil {
 		return nil
 	}
+	excerpt, truncated := NotesExcerpt(r.NotesMd)
 	out := map[string]any{
 		"product":             r.Product,
 		"channel":             r.Channel,
@@ -47,11 +79,32 @@ func PublicRelease(r *AppRelease) map[string]any {
 		"version":             r.Version,
 		"title":               r.Title,
 		"notesMd":             r.NotesMd,
+		"notesExcerpt":        excerpt,
+		"notesTruncated":      truncated,
 		"downloadUrl":         r.DownloadURL,
 		"sha256":              r.SHA256,
 		"fileSize":            r.FileSize,
 		"minSupportedVersion": r.MinSupportedVersion,
 		"forceUpdate":         r.ForceUpdate,
+	}
+	if r.PublishedAt != nil {
+		out["publishedAt"] = *r.PublishedAt
+	}
+	return out
+}
+
+// PublicReleaseCard 公开列表条目：不含全文、下载地址和校验和，避免客户端 limit 被用来批量扒说明。
+func PublicReleaseCard(r *AppRelease) map[string]any {
+	if r == nil {
+		return nil
+	}
+	out := map[string]any{
+		"product":  r.Product,
+		"channel":  r.Channel,
+		"platform": r.Platform,
+		"arch":     r.Arch,
+		"version":  r.Version,
+		"title":    r.Title,
 	}
 	if r.PublishedAt != nil {
 		out["publishedAt"] = *r.PublishedAt
@@ -120,6 +173,46 @@ func (s *Store) UpdateRelease(ctx context.Context, r *AppRelease) error {
 	return nil
 }
 
+// ReleaseNotesPatch 同一版本多内核共用的更新说明字段。
+type ReleaseNotesPatch struct {
+	Title   *string
+	NotesMd *string
+}
+
+// UpdateReleaseNotesByVersion 把同一产品+版本下未撤回记录的标题/更新说明一并改掉。
+// 下载地址、校验和等仍按单条内核维护。
+func (s *Store) UpdateReleaseNotesByVersion(ctx context.Context, product, version, updatedAt string, patch ReleaseNotesPatch) (int, error) {
+	product = strings.TrimSpace(product)
+	version = strings.TrimSpace(version)
+	if product == "" || version == "" {
+		return 0, ErrInvalidRelease
+	}
+	if patch.Title == nil && patch.NotesMd == nil {
+		return 0, nil
+	}
+	set := []string{"updated_at = ?"}
+	args := []any{toDBTime(updatedAt)}
+	if patch.Title != nil {
+		set = append(set, "title_text = ?")
+		args = append(args, *patch.Title)
+	}
+	if patch.NotesMd != nil {
+		set = append(set, "notes_md = ?")
+		args = append(args, *patch.NotesMd)
+	}
+	args = append(args, product, version)
+	res, err := s.db.ExecContext(ctx, `
+		UPDATE app_releases SET `+strings.Join(set, ", ")+`
+		WHERE product_code = ? AND version_label = ? AND release_status <> 'yanked'`,
+		args...,
+	)
+	if err != nil {
+		return 0, err
+	}
+	n, _ := res.RowsAffected()
+	return int(n), nil
+}
+
 func (s *Store) GetReleaseByID(ctx context.Context, id string) (*AppRelease, error) {
 	row := s.db.QueryRowContext(ctx, releaseSelect+` WHERE id = ?`, id)
 	return scanRelease(row)
@@ -164,32 +257,51 @@ func (s *Store) ListReleases(ctx context.Context, f ReleaseListFilter) ([]AppRel
 	return items, total, err
 }
 
-// ListPublishedReleases 仅 published，供公开 changelog。
-func (s *Store) ListPublishedReleases(ctx context.Context, product, channel, platform, arch string, limit int) ([]AppRelease, error) {
-	if limit <= 0 || limit > 50 {
-		limit = 20
+// ListPublishedReleases 仅 published，供公开 changelog。limit/offset 走 clampPage（默认 20，上限 50）。
+func (s *Store) ListPublishedReleases(ctx context.Context, product, channel, platform, arch string, limit, offset int) ([]AppRelease, int, error) {
+	limit, offset = clampPage(limit, offset)
+	var total int
+	if err := s.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM app_releases
+		WHERE product_code = ? AND channel_code = ? AND platform_code = ? AND arch_code = ?
+			AND release_status = 'published'`,
+		product, channel, platform, arch,
+	).Scan(&total); err != nil {
+		return nil, 0, err
 	}
 	rows, err := s.db.QueryContext(ctx, releaseSelect+`
 		WHERE product_code = ? AND channel_code = ? AND platform_code = ? AND arch_code = ?
 			AND release_status = 'published'
 		ORDER BY published_at DESC
-		LIMIT ?`, product, channel, platform, arch, limit)
+		LIMIT ? OFFSET ?`, product, channel, platform, arch, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 	items, err := scanReleaseRows(rows)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	// 按 semver 再排一次（published_at 可能被运营回填不准）
 	sortReleasesBySemVerDesc(items)
-	return items, nil
+	return items, total, nil
+}
+
+// GetPublishedReleaseByDim 按维度取一条已发布记录；草稿/撤回视为不存在。
+func (s *Store) GetPublishedReleaseByDim(ctx context.Context, product, channel, platform, arch, version string) (*AppRelease, error) {
+	rel, err := s.GetReleaseByDim(ctx, product, channel, platform, arch, version)
+	if err != nil {
+		return nil, err
+	}
+	if rel.Status != "published" {
+		return nil, ErrNotFound
+	}
+	return rel, nil
 }
 
 // LatestPublishedRelease 返回 semver 最大的 published 记录。
 func (s *Store) LatestPublishedRelease(ctx context.Context, product, channel, platform, arch string) (*AppRelease, error) {
-	items, err := s.ListPublishedReleases(ctx, product, channel, platform, arch, 50)
+	items, _, err := s.ListPublishedReleases(ctx, product, channel, platform, arch, maxPageSize, 0)
 	if err != nil {
 		return nil, err
 	}

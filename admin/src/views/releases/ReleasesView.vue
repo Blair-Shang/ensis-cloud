@@ -420,6 +420,9 @@ onMounted(() => {
           </div>
           <div class="ops-field">
             <RsLabel>更新说明 (Markdown)</RsLabel>
+            <p class="ops-muted" style="margin: 0">
+              标题与更新说明会同步到该版本全部未撤回内核。桌面帮助只列最近三个版本，官网左侧选版本、右侧看全文。
+            </p>
             <RsMarkdown
               v-model="form.notesMd"
               :height="220"

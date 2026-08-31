@@ -32,6 +32,8 @@ const todayLabel = computed(() =>
 
 const openCount = computed(() => recent.value.filter((f) => f.status === 'open').length)
 
+const siteUrl = import.meta.env.VITE_SITE_URL || 'https://www.niuma007.com'
+
 const recentColumns: RsTableColumn<OpsFeedback>[] = [
   { key: 'title', title: '标题', minWidth: 200 },
   { key: 'status', title: '状态', width: 96 },
@@ -304,6 +306,29 @@ onMounted(async () => {
               <p class="ops-shortcut__desc">关键操作留痕查询</p>
             </span>
           </router-link>
+
+          <a
+            class="ops-shortcut"
+            :href="siteUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="ops-shortcut__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 21a9 9 0 100-18 9 9 0 000 18zM3.6 9h16.8M3.6 15h16.8M12 3c2.5 2.4 4 5.6 4 9s-1.5 6.6-4 9M12 3c-2.5 2.4-4 5.6-4 9s1.5 6.6 4 9"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+            <span class="ops-shortcut__text">
+              <p class="ops-shortcut__title">官方网站</p>
+              <p class="ops-shortcut__desc">下载页、FAQ 与用户入口</p>
+            </span>
+          </a>
         </div>
       </section>
     </div>

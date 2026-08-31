@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   RsBadge,
@@ -189,6 +189,18 @@ async function load() {
     if (msg) error.value = msg
   } finally {
     loading.value = false
+  }
+}
+
+async function refresh() {
+  await load()
+  if (showEditor.value && selectedId.value) {
+    try {
+      await loadModels(selectedId.value)
+    } catch (e) {
+      const msg = mapErr(e)
+      if (msg) error.value = msg
+    }
   }
 }
 
@@ -526,6 +538,10 @@ async function toggleModel(row: OpsAIModel) {
   }
 }
 
+watch(tab, (next, prev) => {
+  if (next === 'endpoints' && prev === 'usage') void load()
+})
+
 onMounted(() => {
   void load()
 })
@@ -565,6 +581,7 @@ onMounted(() => {
         接入点与模型目录存在数据库。密钥密文入库，列表不回显明文。开放后桌面登录即可使用。
       </p>
       <div class="ops-toolbar__grow" />
+      <RsButton variant="secondary" :loading="loading" @click="refresh">刷新</RsButton>
       <RsButton variant="primary" @click="openCreate">新增接入点</RsButton>
     </div>
 

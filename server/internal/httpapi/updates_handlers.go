@@ -89,8 +89,29 @@ func (s *Server) handleUpdatesReleases(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	version := strings.TrimSpace(r.URL.Query().Get("version"))
+	if version != "" {
+		sv, err := store.ParseSemVer(version)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_version")
+			return
+		}
+		rel, err := s.store.GetPublishedReleaseByDim(r.Context(), product, channel, platform, arch, sv.String())
+		if err != nil {
+			if errors.Is(err, store.ErrNotFound) {
+				writeError(w, http.StatusNotFound, "not_found")
+				return
+			}
+			s.log.Error("get published release", zap.Error(err))
+			writeError(w, http.StatusInternalServerError, "server_error")
+			return
+		}
+		writeJSON(w, http.StatusOK, store.PublicRelease(rel))
+		return
+	}
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	items, err := s.store.ListPublishedReleases(r.Context(), product, channel, platform, arch, limit)
+	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+	items, total, err := s.store.ListPublishedReleases(r.Context(), product, channel, platform, arch, limit, offset)
 	if err != nil {
 		s.log.Error("list published releases", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "server_error")
@@ -98,9 +119,9 @@ func (s *Server) handleUpdatesReleases(w http.ResponseWriter, r *http.Request) {
 	}
 	out := make([]map[string]any, 0, len(items))
 	for i := range items {
-		out = append(out, store.PublicRelease(&items[i]))
+		out = append(out, store.PublicReleaseCard(&items[i]))
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"items": out})
+	writeJSON(w, http.StatusOK, map[string]any{"items": out, "total": total})
 }
 
 func parseUpdateQuery(r *http.Request, platformOptional bool) (product, channel, platform, arch string, err error) {

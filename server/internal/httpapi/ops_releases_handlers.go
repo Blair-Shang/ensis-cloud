@@ -139,6 +139,7 @@ func (s *Server) handleOpsReleaseCreate(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusCreated, rel)
 }
 
+// handleOpsReleasePatch 改单条内核的安装包字段；标题与更新说明同步到同版本全部未撤回内核。
 func (s *Server) handleOpsReleasePatch(w http.ResponseWriter, r *http.Request) {
 	actor := s.requireStaff(w, r)
 	if actor == nil {
@@ -193,10 +194,29 @@ func (s *Server) handleOpsReleasePatch(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "server_error")
 		return
 	}
+	synced := 1
+	if req.Title != nil || req.NotesMd != nil {
+		notes := store.ReleaseNotesPatch{}
+		if req.Title != nil {
+			notes.Title = &rel.Title
+		}
+		if req.NotesMd != nil {
+			notes.NotesMd = &rel.NotesMd
+		}
+		n, err := s.store.UpdateReleaseNotesByVersion(r.Context(), rel.Product, rel.Version, rel.UpdatedAt, notes)
+		if err != nil {
+			s.log.Error("patch release notes", zap.Error(err))
+			writeError(w, http.StatusInternalServerError, "server_error")
+			return
+		}
+		synced = n
+	}
 	s.writeAudit(r.Context(), r, store.AuditLog{
 		ActorKind: "staff", ActorID: actor.ID,
 		ActionCode: "release.update", ResourceKind: "release", ResourceID: rel.ID,
-		Detail: map[string]any{"version": rel.Version, "status": rel.Status},
+		Detail: map[string]any{
+			"version": rel.Version, "status": rel.Status, "notesSynced": synced,
+		},
 	})
 	writeJSON(w, http.StatusOK, rel)
 }
