@@ -21,6 +21,11 @@ jwt:
   # 签名密钥，至少 16 字符；含 change-me / dev-niuma / example 时拒绝启动
   # 生产优先环境变量 NIUMA_JWT_SECRET
   secret: "change-me-to-a-long-random-secret"
+
+# 封装上游 API 密钥（与 JWT 分离更稳妥）。空则回退 jwt.secret；已有密文仍可用 JWT 解开
+# 生产优先环境变量 NIUMA_CRYPTO_SECRET
+# crypto:
+#   secret: ""
   # Access Token 有效期（分钟）
   access_token_ttl_min: 30
   # Refresh Token 有效期（天）
@@ -88,6 +93,8 @@ updates:
 # 也可用环境变量 NIUMA_PIPELINE_TOKEN（勿把生产 token 提交进仓库）
 pipeline:
   token: ""
+
+# 系统模型在 Ops「AI」页入库管理（接入点 / 模型目录），勿把上游密钥写进 yaml
 
 # 日志
 log:

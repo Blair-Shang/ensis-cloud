@@ -5,7 +5,7 @@
 ```text
 niuma-ui       # 设计系统
 niuma-site     # 品牌站 + 下载计数
-niuma-cloud    # 本仓：Identity + Feedback + Updates + Admin
+niuma-cloud    # 本仓：Identity + Feedback + Updates + 系统 AI 代理 + Admin
 NiuMa          # 桌面客户端
 ```
 
@@ -18,6 +18,8 @@ niuma-cloud/
     cmd/server/          # 进程入口
     internal/
       auth/              # 密码 / JWT / OTP
+      llm/               # 系统模型 OpenAI 兼容代理
+      cryptutil/         # 上游密钥 AES-GCM 封装
       httpapi/           # HTTP 路由与 handler
       store/             # 数据访问
       db/                # 连接；migrations/{mysql,sqlite}/*.sql

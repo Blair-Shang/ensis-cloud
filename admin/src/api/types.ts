@@ -35,6 +35,10 @@ export type OpsStats = {
   feedbackLast7d: number
   /** 更新安装包拉起/下载累计次数 */
   downloadHits?: number
+  /** 当日（UTC）调用过系统模型的用户数 */
+  aiUsersToday?: number
+  /** 当日（UTC）系统模型对话次数 */
+  aiRequestsToday?: number
 }
 
 /**
@@ -196,6 +200,94 @@ export type OpsReleaseCreate = {
   downloadUrl: string
   sha256: string
   fileSize?: number
+}
+
+/** 系统模型上游接入点（列表不含密钥明文）。 */
+export type OpsAIEndpoint = {
+  id: string
+  providerName: string
+  baseUrl: string
+  hasApiSecret: boolean
+  enabled: boolean
+  defaultModel: string
+  dailyRequestLimit: number
+  dailyTokenLimit: number
+  sortSeq: number
+  createdByStaffId: string
+  updatedByStaffId: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type OpsAIModel = {
+  id: string
+  endpointId: string
+  code: string
+  label: string
+  recordStatus: string
+  sortSeq: number
+  createdByStaffId: string
+  updatedByStaffId: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type OpsAIEndpointWrite = {
+  providerName?: string
+  baseUrl?: string
+  apiSecret?: string
+  enabled?: boolean
+  defaultModel?: string
+  dailyRequestLimit?: number
+  dailyTokenLimit?: number
+  sortSeq?: number
+}
+
+export type OpsAIEndpointTest = {
+  endpointId?: string
+  baseUrl?: string
+  apiSecret?: string
+  model?: string
+}
+
+export type OpsAIEndpointTestResult = {
+  ok: boolean
+  status: number
+  latencyMs: number
+  message: string
+  model: string
+}
+
+/** GET /api/v1/ops/ai/usage 按日用量一行 */
+export type OpsAIUsageRow = {
+  userId: string
+  email: string
+  displayName: string
+  status: string
+  usageDay: string
+  requestCount: number
+  tokenCount: number
+  updatedAt: string
+}
+
+export type OpsAIUsageSummary = {
+  usageDay: string
+  userCount: number
+  requestCount: number
+  tokenCount: number
+}
+
+export type OpsAIUsageResult = {
+  day: string
+  summary: OpsAIUsageSummary
+  dailyRequestLimit: number
+  dailyTokenLimit: number
+  /** 含选定日在内的近 7 日汇总（缺日补零） */
+  trend?: OpsAIUsageSummary[]
+  /** 当日请求次数前 8，供排行图 */
+  top?: OpsAIUsageRow[]
+  items: OpsAIUsageRow[]
+  total: number
 }
 
 export type OpsReleasePatch = {

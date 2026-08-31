@@ -29,6 +29,9 @@ const pageSubtitle = computed(() => {
     const name = staff.value?.displayName?.trim() || staff.value?.email || '同事'
     return `${greet}，${name} · 运营数据总览与快捷入口`
   }
+  if (route.name === 'ai' && route.query.tab === 'usage') {
+    return '系统模型按日调用：谁调了多少次'
+  }
   return typeof route.meta.subtitle === 'string' ? route.meta.subtitle : ''
 })
 
@@ -45,6 +48,8 @@ const pageIcon = computed(() => {
       return 'M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z'
     case 'releases':
       return 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4'
+    case 'ai':
+      return 'M12 3v2m0 14v2m9-9h-2M5 12H3m13.657-6.657l-1.414 1.414M6.757 17.243l-1.414 1.414m12.728 0l-1.414-1.414M6.757 6.757L5.343 5.343M12 8a4 4 0 100 8 4 4 0 000-8z'
     case 'audit':
       return 'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8'
     default:
@@ -65,6 +70,8 @@ const pageIconTone = computed(() => {
       return 'orange'
     case 'releases':
       return 'cyan'
+    case 'ai':
+      return 'amber'
     case 'audit':
       return 'green'
     default:
@@ -88,6 +95,8 @@ const breadcrumbs = computed(() => {
     crumbs.push({ label: '反馈' })
   } else if (name === 'releases') {
     crumbs.push({ label: '发布' })
+  } else if (name === 'ai') {
+    crumbs.push({ label: 'AI' })
   } else if (name === 'audit') {
     crumbs.push({ label: '审计' })
   } else {
@@ -130,6 +139,11 @@ const navItems: Array<{ to: string; label: string; icon: string; exact?: boolean
     to: '/releases',
     label: '发布',
     icon: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4',
+  },
+  {
+    to: '/ai',
+    label: 'AI',
+    icon: 'M12 3v2m0 14v2m9-9h-2M5 12H3m13.657-6.657l-1.414 1.414M6.757 17.243l-1.414 1.414m12.728 0l-1.414-1.414M6.757 6.757L5.343 5.343M12 8a4 4 0 100 8 4 4 0 000-8z',
   },
   {
     to: '/audit',

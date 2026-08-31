@@ -27,6 +27,8 @@ type Server struct {
 	pipelineCD *ratelimit.CoolDown // 流水线推送节流
 	fbCreateCD *ratelimit.CoolDown // 公开提单节流
 	fbLookupCD *ratelimit.CoolDown // 匿名查询节流
+	aiTestCD   *ratelimit.CoolDown // Ops 探测上游冷却
+	aiChat     *ratelimit.Inflight // 同一用户并发对话路数
 	files      *releasefiles.Store
 	log        *zap.Logger
 	client     *http.Client // 反馈 Webhook 等出站请求
@@ -47,6 +49,8 @@ func New(cfg config.Config, st *store.Store, mailer *mail.Mailer, logger *zap.Lo
 		pipelineCD: ratelimit.NewCoolDown(2 * time.Second),
 		fbCreateCD: ratelimit.NewCoolDown(30 * time.Second),
 		fbLookupCD: ratelimit.NewCoolDown(2 * time.Second),
+		aiTestCD:   ratelimit.NewCoolDown(3 * time.Second),
+		aiChat:     ratelimit.NewInflight(2),
 		files:      releasefiles.New(cfg.ReleasesDir),
 		log:        logger,
 		client:     &http.Client{Timeout: 8 * time.Second},
@@ -116,8 +120,13 @@ func (s *Server) SeedStaff(ctx context.Context) error {
 //	GET  /niuma/cloud/api/v1/updates/files/...  本机安装包（仅 published）
 //	POST /niuma/cloud/api/v1/pipeline/releases/assets  流水线上传安装包
 //	POST /niuma/cloud/api/v1/pipeline/releases  流水线登记并发布
+//	GET  /niuma/cloud/api/v1/ai/catalog
+//	POST /niuma/cloud/api/v1/ai/v1/chat/completions
+//	POST /niuma/cloud/api/v1/ops/ai/endpoints/test  Ops 探测上游
+//	*    /niuma/cloud/api/v1/ops/ai/*            系统模型接入点 / 目录 CRUD
 //	POST /niuma/cloud/api/v1/ops/auth/login|refresh|logout|password
 //	GET  /niuma/cloud/api/v1/ops/stats|audit-logs|staff|users|feedback|releases
+//	GET  /niuma/cloud/api/v1/ops/ai/usage     系统模型按日用量
 //	*    /niuma/ops/*                        Admin SPA
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
@@ -177,6 +186,9 @@ func (s *Server) registerCloudAPI(mux *http.ServeMux, p string) {
 	mux.HandleFunc("GET "+p+"/api/v1/me", s.handleMe)
 	mux.HandleFunc("PATCH "+p+"/api/v1/me", s.handlePatchMe)
 
+	mux.HandleFunc("GET "+p+"/api/v1/ai/catalog", s.handleAICatalog)
+	mux.HandleFunc("POST "+p+"/api/v1/ai/v1/chat/completions", s.handleAIChatCompletions)
+
 	mux.HandleFunc("POST "+p+"/api/v1/feedback", s.handleFeedbackCreate)
 	mux.HandleFunc("GET "+p+"/api/v1/feedback/mine", s.handleFeedbackMine)
 	mux.HandleFunc("GET "+p+"/api/v1/feedback/lookup", s.handleFeedbackLookup)
@@ -205,6 +217,19 @@ func (s *Server) registerCloudAPI(mux *http.ServeMux, p string) {
 	mux.HandleFunc("PATCH "+p+"/api/v1/ops/releases/{id}", s.handleOpsReleasePatch)
 	mux.HandleFunc("POST "+p+"/api/v1/ops/releases/{id}/publish", s.handleOpsReleasePublish)
 	mux.HandleFunc("POST "+p+"/api/v1/ops/releases/{id}/yank", s.handleOpsReleaseYank)
+
+	mux.HandleFunc("GET "+p+"/api/v1/ops/ai/usage", s.handleOpsAIUsage)
+	mux.HandleFunc("GET "+p+"/api/v1/ops/ai/endpoints", s.handleOpsAIEndpointList)
+	mux.HandleFunc("POST "+p+"/api/v1/ops/ai/endpoints", s.handleOpsAIEndpointCreate)
+	mux.HandleFunc("POST "+p+"/api/v1/ops/ai/endpoints/test", s.handleOpsAIEndpointTest)
+	mux.HandleFunc("GET "+p+"/api/v1/ops/ai/endpoints/{id}", s.handleOpsAIEndpointGet)
+	mux.HandleFunc("GET "+p+"/api/v1/ops/ai/endpoints/{id}/secret", s.handleOpsAIEndpointSecret)
+	mux.HandleFunc("PATCH "+p+"/api/v1/ops/ai/endpoints/{id}", s.handleOpsAIEndpointPatch)
+	mux.HandleFunc("DELETE "+p+"/api/v1/ops/ai/endpoints/{id}", s.handleOpsAIEndpointDelete)
+	mux.HandleFunc("GET "+p+"/api/v1/ops/ai/endpoints/{id}/models", s.handleOpsAIModelList)
+	mux.HandleFunc("POST "+p+"/api/v1/ops/ai/endpoints/{id}/models", s.handleOpsAIModelCreate)
+	mux.HandleFunc("PATCH "+p+"/api/v1/ops/ai/models/{modelId}", s.handleOpsAIModelPatch)
+	mux.HandleFunc("DELETE "+p+"/api/v1/ops/ai/models/{modelId}", s.handleOpsAIModelDelete)
 }
 
 // serveOps 提供 Admin SPA（/niuma/ops）。
@@ -244,7 +269,7 @@ func (s *Server) withCORS(next http.Handler) http.Handler {
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
 				w.Header().Set("Vary", "Origin")
 				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Device-Label")
-				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
 				w.Header().Set("Access-Control-Max-Age", "86400")
 			}
 		}

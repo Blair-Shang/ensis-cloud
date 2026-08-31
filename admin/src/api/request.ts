@@ -191,3 +191,7 @@ export function post<T>(path: string, body?: unknown, options?: Omit<RequestOpti
 export function patch<T>(path: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
   return request<T>(path, { ...options, method: 'PATCH', body })
 }
+
+export function del<T>(path: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
+  return request<T>(path, { ...options, method: 'DELETE' })
+}

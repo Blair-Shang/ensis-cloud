@@ -9,7 +9,14 @@ import {
 } from '@/api'
 import { feedbackStatusLabel, feedbackStatusVariant, formatApiError, formatDateTime } from '@/utils/format'
 
-const stats = ref<OpsStats>({ users: 0, feedback: 0, feedbackLast7d: 0, downloadHits: 0 })
+const stats = ref<OpsStats>({
+  users: 0,
+  feedback: 0,
+  feedbackLast7d: 0,
+  downloadHits: 0,
+  aiUsersToday: 0,
+  aiRequestsToday: 0,
+})
 const recent = ref<OpsFeedback[]>([])
 const error = ref('')
 const loading = ref(true)
@@ -142,6 +149,25 @@ onMounted(async () => {
           </svg>
         </div>
       </div>
+
+      <router-link class="ops-card ops-stat ops-stat--ai" to="/ai?tab=usage">
+        <div class="ops-stat__meta">
+          <h3>系统模型</h3>
+          <p class="ops-stat__value">{{ loading ? '—' : stats.aiRequestsToday ?? 0 }}</p>
+          <p class="ops-stat__hint">今日调用 · {{ loading ? '—' : stats.aiUsersToday ?? 0 }} 人</p>
+        </div>
+        <div class="ops-stat__icon ops-stat__icon--ai" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="M12 3v2m0 14v2m9-9h-2M5 12H3m13.657-6.657l-1.414 1.414M6.757 17.243l-1.414 1.414m12.728 0l-1.414-1.414M6.757 6.757L5.343 5.343M12 8a4 4 0 100 8 4 4 0 000-8z"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </div>
+      </router-link>
     </div>
 
     <div class="ops-grid-2">
@@ -240,6 +266,24 @@ onMounted(async () => {
             <span class="ops-shortcut__text">
               <p class="ops-shortcut__title">员工管理</p>
               <p class="ops-shortcut__desc">运营账号与权限启停</p>
+            </span>
+          </router-link>
+
+          <router-link class="ops-shortcut" to="/ai?tab=usage">
+            <span class="ops-shortcut__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 3v2m0 14v2m9-9h-2M5 12H3m13.657-6.657l-1.414 1.414M6.757 17.243l-1.414 1.414m12.728 0l-1.414-1.414M6.757 6.757L5.343 5.343M12 8a4 4 0 100 8 4 4 0 000-8z"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+            <span class="ops-shortcut__text">
+              <p class="ops-shortcut__title">模型用量</p>
+              <p class="ops-shortcut__desc">按日查看谁调用了多少次</p>
             </span>
           </router-link>
 

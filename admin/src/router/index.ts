@@ -51,6 +51,12 @@ export const router = createRouter({
           meta: { title: '发布', subtitle: '桌面端版本与更新说明（官网与客户端共用）' },
         },
         {
+          path: 'ai',
+          name: 'ai',
+          component: () => import('@/views/ai/AiView.vue'),
+          meta: { title: 'AI', subtitle: '系统模型接入点、目录与按日用量' },
+        },
+        {
           path: 'audit',
           name: 'audit',
           component: () => import('@/views/audit/AuditView.vue'),

@@ -245,11 +245,18 @@ func (s *Server) handleOpsStats(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "server_error")
 		return
 	}
+	aiToday, err := s.store.SummarizeAIUsage(r.Context(), "")
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "server_error")
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"users":          users,
-		"feedback":       feedback,
-		"feedbackLast7d": week,
-		"downloadHits":   hits,
+		"users":           users,
+		"feedback":        feedback,
+		"feedbackLast7d":  week,
+		"downloadHits":    hits,
+		"aiUsersToday":    aiToday.UserCount,
+		"aiRequestsToday": aiToday.RequestCount,
 	})
 }
 

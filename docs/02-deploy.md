@@ -2,7 +2,7 @@
 
 ## 上线前加固
 
-1. **密钥**：`jwt.secret` / 流水线 token / SMTP 授权码不要用文档里的样例。优先环境变量（见 `config/app.env.example`）：`NIUMA_JWT_SECRET`、`NIUMA_PIPELINE_TOKEN`、`NIUMA_SMTP_PASSWORD`、`NIUMA_DB_DSN`。含 `change-me` / `dev-niuma` / `example` 的 JWT 会拒绝启动。
+1. **密钥**：`jwt.secret` / 流水线 token / SMTP 授权码不要用文档里的样例。优先环境变量（见 `config/app.env.example`）：`NIUMA_JWT_SECRET`、`NIUMA_CRYPTO_SECRET`、`NIUMA_PIPELINE_TOKEN`、`NIUMA_SMTP_PASSWORD`、`NIUMA_DB_DSN`。含 `change-me` / `dev-niuma` / `example` 的 JWT 会拒绝启动。系统 AI 在 Ops「AI」页入库管理，上游密钥密文用 `crypto.secret`（未配则回退 JWT）封装，勿写进 yaml，编辑不回显明文。
 2. **`smtp.log_otp`**：生产必须 `false`（未写时默认 false）。
 3. **监听**：`http_addr: "127.0.0.1:8090"`，只让 Nginx 443 对外。`trust_proxy: true`。
 4. **MySQL**：安全组只放行应用机；不要用公网 3306 + `root`。DSN 可用 `NIUMA_DB_DSN`。

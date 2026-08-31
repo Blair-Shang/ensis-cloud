@@ -51,6 +51,18 @@ export function formatApiError(e: unknown, fallback = '操作失败'): string {
         return '更新说明过长'
       case 'rate_limited':
         return '请求过于频繁，请稍后再试'
+      case 'invalid_endpoint':
+        return '请填写上游 Base URL'
+      case 'unsafe_upstream':
+        return '上游 Base URL 必须是云端能访问的 HTTPS 公网地址（如 https://api.deepseek.com/v1），不能填本机或内网'
+      case 'missing_secret':
+        return '请填写上游 API 密钥'
+      case 'model_required':
+        return '请填写默认模型编码'
+      case 'ai_busy':
+        return '对话进行中过多，请稍后再试'
+      case 'invalid_day':
+        return '日期须为 YYYY-MM-DD（UTC）'
       default:
         return e.code || fallback
     }

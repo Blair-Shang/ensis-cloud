@@ -8,7 +8,7 @@ admin/src/
     request.ts         # 全局 HTTP 工具（默认 /niuma/cloud）
     types.ts           # 接口类型
     auth.ts / stats.ts / users.ts / feedback.ts
-    releases.ts / admin.ts
+    releases.ts / admin.ts / ai.ts
     index.ts           # 统一导出
   components/          # 可复用组件（含 ui.ts）
   layouts/             # 布局
@@ -19,6 +19,7 @@ admin/src/
     staff/
     feedback/
     releases/
+    ai/                # 接入点 + 用量监控
     audit/
   router/              # history base=/niuma/ops/
   styles/

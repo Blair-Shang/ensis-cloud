@@ -21,6 +21,7 @@ type User struct {
 
 var ErrNotFound = errors.New("not found")
 var ErrConflict = errors.New("conflict")
+var ErrQuotaExceeded = errors.New("quota exceeded")
 
 func (s *Store) CreateUser(ctx context.Context, u User) error {
 	_, err := s.db.ExecContext(ctx, `

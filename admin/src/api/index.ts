@@ -8,6 +8,7 @@ export {
   get,
   post,
   patch,
+  del,
   tryRestoreSession,
 } from './request'
 export type * from './types'
@@ -24,6 +25,20 @@ export {
   publishOpsRelease,
   yankOpsRelease,
 } from './releases'
+export {
+  fetchOpsAIEndpoints,
+  createOpsAIEndpoint,
+  fetchOpsAIEndpoint,
+  fetchOpsAIEndpointSecret,
+  patchOpsAIEndpoint,
+  deleteOpsAIEndpoint,
+  testOpsAIEndpoint,
+  fetchOpsAIModels,
+  createOpsAIModel,
+  patchOpsAIModel,
+  deleteOpsAIModel,
+  fetchOpsAIUsage,
+} from './ai'
 export {
   fetchOpsAuditLogs,
   fetchOpsStaff,

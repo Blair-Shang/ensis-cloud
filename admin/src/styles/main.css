@@ -712,7 +712,7 @@ button {
 
 .ops-stats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
   margin-bottom: 16px;
 }
@@ -755,6 +755,10 @@ button {
 
 .ops-stat--downloads {
   --ops-stat-accent: #13c2c2;
+}
+
+.ops-stat--ai {
+  --ops-stat-accent: #faad14;
 }
 
 .ops-stat:hover {
@@ -817,6 +821,11 @@ button {
 .ops-stat__icon--downloads {
   background: linear-gradient(145deg, #e6fffb, #87e8de);
   color: #13c2c2;
+}
+
+.ops-stat__icon--ai {
+  background: linear-gradient(145deg, #fffbe6, #ffe58f);
+  color: #d48806;
 }
 
 .ops-stat__icon svg {

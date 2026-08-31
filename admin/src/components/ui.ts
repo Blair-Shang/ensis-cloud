@@ -14,5 +14,7 @@ export {
   RsCheckbox,
   RsLabel,
   RsMarkdown,
+  RsTooltip,
+  RsTooltipProvider,
 } from '@niuma/ui'
 export type { RsTableColumn } from '@niuma/ui'

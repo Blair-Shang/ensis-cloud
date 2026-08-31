@@ -8,6 +8,27 @@
 
 ## [Unreleased]
 
+## [1.1.8] - 2026-08-31
+
+### 新增
+
+- 系统模型：登录用户 `GET /api/v1/ai/catalog`、`POST /api/v1/ai/v1/chat/completions`（OpenAI 兼容代理）。上游密钥只存云端密文，客户端只用账号 token。
+- Ops「AI」：接入点 / 模型目录入库；厂商预设填充 Base URL 与推荐模型；对话框编辑；页脚「测试连接」（`POST /api/v1/ops/ai/endpoints/test`）。
+- Ops 用量监控：`GET /api/v1/ops/ai/usage` 按 UTC 日列出用户次数，附 `summary` / 近 7 日 `trend` / 排行 `top`。Admin「用量」用与对话围栏同一套内联 SVG（折线 + 柱状），概览增加当日调用卡片。
+- 按用户按日计量表 `ai_usage_daily`；日请求限额内原子累加，超限 `429 ai_quota_exceeded`。
+
+### 安全
+
+- 上游 Base URL 必须是云端能访问的公网 HTTPS，禁止本机 / 内网 / 元数据地址；出站不跟随重定向。
+- 接入点密钥密文入库，列表与编辑不回显明文；`GET .../secret` 只返回 `{found}`。密封优先 `crypto.secret` / `NIUMA_CRYPTO_SECRET`。
+- 同一用户最多 2 路并发对话（`429 ai_busy`）；Ops 探测上游员工 3 秒冷却。客户端请求体去掉 `api_key` / `authorization`，并限制 `n` 与 `max_tokens`。
+- 用户 JWT 与员工 JWT 分 `kind`，终端用户不能调 `/ops/*`，员工 token 不能走用户态 `/ai/*`。
+
+### 变更
+
+- `GET /api/v1/ops/stats` 增加 `aiUsersToday` / `aiRequestsToday`。
+- 未开放接入点或缺少密钥时：`catalog.enabled=false`，对话 `503 ai_disabled`。
+
 ## [1.1.7] - 2026-08-30
 
 ### 变更

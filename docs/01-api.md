@@ -26,6 +26,17 @@
 | GET | `/api/v1/feedback/lookup` | 官网匿名查询：`?id=&contact=` |
 | GET | `/api/v1/feedback/{id}/attachments/{attId}` | 反馈截图 |
 
+## 系统 AI（用户 Bearer）
+
+桌面端登录后写入本机 `niuma-system` Provider。接入点 / 模型目录在库表管理（Ops「AI」），上游密钥密文入库，客户端只用账号 token。
+
+未开放接入点或缺少密钥时：`catalog.enabled=false`，对话返回 `503 ai_disabled`。
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/v1/ai/catalog` | `{ enabled, providerName, defaultModel, models[], dailyRequestLimit, requestsUsed, … }` |
+| POST | `/api/v1/ai/v1/chat/completions` | OpenAI 兼容；`Authorization: Bearer <access>`；超配额 `429 ai_quota_exceeded`；并发超限 `429 ai_busy` |
+
 ## 公开 Updates
 
 | 方法 | 路径 | 说明 |
@@ -87,7 +98,7 @@ GitHub Actions 在打完安装包后：**先把文件传到本机**，再登记 
 | POST | `/api/v1/ops/auth/refresh` | 轮转 refresh（Cookie 或 body.refreshToken）并签发新 access |
 | POST | `/api/v1/ops/auth/logout` | 吊销当前 refresh 并清 Cookie |
 | POST | `/api/v1/ops/auth/password` | 修改自己的密码（吊销旧会话并重签） |
-| GET | `/api/v1/ops/stats` | `users` / `feedback` / `feedbackLast7d` / `downloadHits` |
+| GET | `/api/v1/ops/stats` | `users` / `feedback` / `feedbackLast7d` / `downloadHits` / `aiUsersToday` / `aiRequestsToday` |
 | GET | `/api/v1/ops/audit-logs` | 审计；`action` / `actorKind` / `actorId` / `resourceKind` / `resourceId` 等值；`limit`（默认 20，上限 50）/ `offset` |
 | GET / POST | `/api/v1/ops/staff` | 员工列表 / 创建（创建需 admin）；列表：`id` / `email` / `displayName` / `status` / `role` 等值；`limit` / `offset` |
 | PATCH | `/api/v1/ops/staff/{id}` | 启停、显示名、角色（需 admin） |
@@ -101,6 +112,13 @@ GitHub Actions 在打完安装包后：**先把文件传到本机**，再登记 
 | GET / PATCH | `/api/v1/ops/releases/{id}` | 详情 / 编辑草稿 |
 | POST | `/api/v1/ops/releases/{id}/publish` | 发布 |
 | POST | `/api/v1/ops/releases/{id}/yank` | 撤回 |
+| GET | `/api/v1/ops/ai/usage` | 按 UTC 日用量：`?day=YYYY-MM-DD`（默认今天）`email`（精确）`userId` `limit` `offset`；返回 `summary` / `trend`（近 7 日） / `top`（排行前 8） / `items` / `dailyRequestLimit` |
+| GET / POST | `/api/v1/ops/ai/endpoints` | 系统模型接入点列表 / 新建（密钥密文入库，列表仅 `hasApiSecret`） |
+| POST | `/api/v1/ops/ai/endpoints/test` | 探测上游：`{ baseUrl, apiSecret, model, endpointId? }`；仅公网 HTTPS；`ok/latencyMs/message`（不记用户配额，员工 3s 冷却） |
+| GET / PATCH / DELETE | `/api/v1/ops/ai/endpoints/{id}` | 接入点详情 / 编辑 / 删除（级联目录） |
+| GET | `/api/v1/ops/ai/endpoints/{id}/secret` | 是否已配置密钥（`found`，不回显明文） |
+| GET / POST | `/api/v1/ops/ai/endpoints/{id}/models` | 模型目录列表 / 新增 |
+| PATCH / DELETE | `/api/v1/ops/ai/models/{modelId}` | 模型目录编辑 / 删除 |
 
 ## 健康检查
 

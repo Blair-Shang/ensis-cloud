@@ -26,6 +26,8 @@ type Config struct {
 	DBDSN    string
 
 	JWTSecret       string
+	// CryptoSecret 封装上游 API 密钥；空则回退 JWTSecret，解密时两者都试。
+	CryptoSecret    string
 	AccessTokenTTL  time.Duration
 	RefreshTokenTTL time.Duration
 	OTPTTL          time.Duration
@@ -81,6 +83,10 @@ type fileConfig struct {
 		AccessTokenTTLMin   int    `yaml:"access_token_ttl_min"`
 		RefreshTokenTTLDays int    `yaml:"refresh_token_ttl_days"`
 	} `yaml:"jwt"`
+
+	Crypto struct {
+		Secret string `yaml:"secret"`
+	} `yaml:"crypto"`
 
 	CORSOrigins []string `yaml:"cors_origins"`
 
@@ -181,6 +187,7 @@ func Load() (Config, error) {
 		DBDriver:           strings.ToLower(firstNonEmpty(fc.DB.Driver, "mysql")),
 		DBDSN:              firstNonEmpty(getenv("NIUMA_DB_DSN", ""), strings.TrimSpace(fc.DB.DSN)),
 		JWTSecret:          firstNonEmpty(getenv("NIUMA_JWT_SECRET", ""), strings.TrimSpace(fc.JWT.Secret)),
+		CryptoSecret:       firstNonEmpty(getenv("NIUMA_CRYPTO_SECRET", ""), strings.TrimSpace(fc.Crypto.Secret)),
 		AccessTokenTTL:     time.Duration(intOr(fc.JWT.AccessTokenTTLMin, 30)) * time.Minute,
 		RefreshTokenTTL:    time.Duration(intOr(fc.JWT.RefreshTokenTTLDays, 30)) * 24 * time.Hour,
 		OTPTTL:             time.Duration(intOr(fc.OTP.TTLMin, 5)) * time.Minute,
@@ -205,6 +212,7 @@ func Load() (Config, error) {
 		LogMaxBackups:      intOr(fc.Log.MaxBackups, 10),
 		LogMaxAgeDays:      intOr(fc.Log.MaxAgeDays, 30),
 	}
+
 	for _, h := range fc.Updates.DownloadURLHosts {
 		h = strings.ToLower(strings.TrimSpace(h))
 		if h != "" {
@@ -214,6 +222,9 @@ func Load() (Config, error) {
 
 	if cfg.JWTSecret == "" || len(cfg.JWTSecret) < 16 {
 		return Config{}, fmt.Errorf("jwt.secret must be at least 16 characters (or set NIUMA_JWT_SECRET)")
+	}
+	if cfg.CryptoSecret != "" && len(cfg.CryptoSecret) < 16 {
+		return Config{}, fmt.Errorf("crypto.secret must be at least 16 characters (or set NIUMA_CRYPTO_SECRET)")
 	}
 	if insecureExampleSecret(cfg.JWTSecret) && !allowInsecureDev() {
 		return Config{}, fmt.Errorf("jwt.secret looks like a documented example; set NIUMA_JWT_SECRET or replace jwt.secret")
