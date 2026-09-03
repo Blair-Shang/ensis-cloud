@@ -13,6 +13,7 @@ import {
   RsTable,
   RsTooltip,
   RsTooltipProvider,
+  type RsSelectModelValue,
   type RsTableColumn,
 } from '@/components/ui'
 import {
@@ -257,8 +258,8 @@ function applyPreset(id: string, fillName: boolean) {
   clearPull()
 }
 
-function onVendorChange(value: string) {
-  const id = value || AI_PROVIDER_PRESET_CUSTOM
+function onVendorChange(value: RsSelectModelValue) {
+  const id = typeof value === 'string' && value ? value : AI_PROVIDER_PRESET_CUSTOM
   if (id === AI_PROVIDER_PRESET_CUSTOM) {
     formVendor.value = AI_PROVIDER_PRESET_CUSTOM
     clearTest()

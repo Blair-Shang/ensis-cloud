@@ -50,7 +50,7 @@ const createPassword = ref('')
 const creating = ref(false)
 
 const columns: RsTableColumn<OpsStaffAccount>[] = [
-  { key: 'staff', title: '员工', minWidth: 260 },
+  { key: 'staff', title: '员工', minWidth: 260, ellipsis: true },
   { key: 'role', title: '角色', width: 88 },
   { key: 'status', title: '状态', width: 100 },
   { key: 'createdAt', title: '创建时间', width: 180 },

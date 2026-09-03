@@ -126,7 +126,7 @@ const formArchOptions = [
 const columns: RsTableColumn<OpsRelease>[] = [
   { key: 'version', title: '版本', width: 110 },
   { key: 'platform', title: '平台', width: 140 },
-  { key: 'title', title: '标题', minWidth: 180 },
+  { key: 'title', title: '标题', minWidth: 180, ellipsis: true },
   { key: 'status', title: '状态', width: 100 },
   { key: 'publishedAt', title: '发布时间', width: 170 },
   { key: 'actions', title: '操作', width: 220 },
@@ -335,9 +335,11 @@ onMounted(() => {
           <div class="ops-table__cell-sub">{{ row.channel }}</div>
         </template>
         <template #title="{ row }">
-          <div class="ops-table__cell-title">{{ row.title }}</div>
-          <div class="ops-table__cell-sub ops-mono" :title="row.downloadUrl">
-            {{ row.downloadUrl }}
+          <div class="ops-release-title">
+            <div class="ops-table__cell-title" :title="row.title">{{ row.title }}</div>
+            <div class="ops-table__cell-sub ops-mono" :title="row.downloadUrl">
+              {{ row.downloadUrl }}
+            </div>
           </div>
         </template>
         <template #status="{ row }">
@@ -495,5 +497,16 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+.ops-release-title {
+  min-width: 0;
+  overflow: hidden;
+}
+.ops-release-title .ops-table__cell-title,
+.ops-release-title .ops-table__cell-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: none;
 }
 </style>

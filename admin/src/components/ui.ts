@@ -17,4 +17,4 @@ export {
   RsTooltip,
   RsTooltipProvider,
 } from '@niuma/ui'
-export type { RsTableColumn } from '@niuma/ui'
+export type { RsSelectModelValue, RsTableColumn } from '@niuma/ui'
