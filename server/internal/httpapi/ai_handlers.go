@@ -89,13 +89,30 @@ func (s *Server) handleAICatalog(w http.ResponseWriter, r *http.Request) {
 		}
 		models = append(models, aiCatalogModel{Code: m.ModelCode, Label: label})
 	}
-	if len(models) == 0 && rt.Endpoint.DefaultModelCode != "" {
-		models = append(models, aiCatalogModel{Code: rt.Endpoint.DefaultModelCode, Label: rt.Endpoint.DefaultModelCode})
+	// 下发目录以启用模型为准。默认型号已不在目录里时改指目录第一项，避免桌面把已删除的型号写回本地。
+	defaultModel := strings.TrimSpace(rt.Endpoint.DefaultModelCode)
+	if defaultModel != "" {
+		found := false
+		for _, m := range models {
+			if m.Code == defaultModel {
+				found = true
+				break
+			}
+		}
+		if !found {
+			if len(models) > 0 {
+				defaultModel = models[0].Code
+			} else {
+				defaultModel = ""
+			}
+		}
+	} else if len(models) > 0 {
+		defaultModel = models[0].Code
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"enabled":           true,
 		"providerName":      rt.Endpoint.ProviderDisplayName,
-		"defaultModel":      rt.Endpoint.DefaultModelCode,
+		"defaultModel":      defaultModel,
 		"models":            models,
 		"dailyRequestLimit": rt.Endpoint.DailyRequestLimit,
 		"dailyTokenLimit":   rt.Endpoint.DailyTokenLimit,

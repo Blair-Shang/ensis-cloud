@@ -1,6 +1,5 @@
 import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import tailwindcss from '@tailwindcss/vite'
 import { niumaUiHost } from '@niuma/ui/vite-plugins/niuma-ui-host'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
@@ -69,7 +68,7 @@ function faviconFallback(): Plugin {
 export default defineConfig({
   root: __dirname,
   base: '/niuma/ops/',
-  plugins: [vue(), tailwindcss(), ...niumaUiHost(), faviconFallback()],
+  plugins: [vue(), ...niumaUiHost(), faviconFallback()],
   resolve: {
     alias: [
       {

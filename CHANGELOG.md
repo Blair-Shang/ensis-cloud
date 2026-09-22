@@ -8,6 +8,13 @@
 
 ## [Unreleased]
 
+
+## [1.2.1] - 2026-09-22
+
+### 变更
+
+- Admin 不再引入 Tailwind。页面样式是手写的 `ops-*`，组件样式走 niuma-ui 2.x 的 `styles.css`。卸掉 `tailwindcss`、`@tailwindcss/vite`，以及 `main.css` 里的 `@import 'tailwindcss'`。
+
 ## [1.2.0] - 2026-08-31
 
 ### 修复
