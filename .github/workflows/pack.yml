@@ -1,6 +1,7 @@
 # niuma-cloud 打包流水线。
 # Admin 嵌入 Go 单二进制；无 CGO，可在 Linux runner 交叉编译 Windows。
-# 推送 v* 标签时创建 GitHub Release；workflow_dispatch 仅上传 artifact。
+# 自动发版走 release.yml（推送 main）。本工作流留给手工推送的 v* 标签。
+# workflow_dispatch 仅上传 artifact。
 # niuma-ui 从 npm 拉取（默认 latest），不 checkout 兄弟 Git 仓库。
 name: Pack and Release
 

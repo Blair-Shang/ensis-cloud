@@ -66,6 +66,7 @@ func secureTokenEqual(want, got string) bool {
 
 // handlePipelineReleases 流水线专用：按版本维度 upsert 并默认直接 publish。
 // 已校验 pipeline token，不再按 IP 做 2s 冷却。一次发版会连登 beta 与 stable，冷却会误伤第二次。
+// notesMd 非空时，同一产品+版本的未撤回内核一并更新说明，不改各内核标题。
 func (s *Server) handlePipelineReleases(w http.ResponseWriter, r *http.Request) {
 	if !s.requirePipelineToken(w, r) {
 		return
@@ -94,6 +95,8 @@ func (s *Server) handlePipelineReleases(w http.ResponseWriter, r *http.Request) 
 			title = "NiuMa " + strings.TrimPrefix(ver, "v")
 		}
 	}
+	// 空说明表示这次只更新安装包，不把已发布的 changelog 清掉。
+	req.NotesMd = strings.TrimSpace(req.NotesMd)
 
 	out := make([]store.AppRelease, 0, len(req.Items))
 	for i := range req.Items {
@@ -135,7 +138,20 @@ func (s *Server) handlePipelineReleases(w http.ResponseWriter, r *http.Request) 
 		})
 		out = append(out, *rel)
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"items": out, "published": publish})
+	notesSynced := 0
+	if req.NotesMd != "" && len(out) > 0 {
+		head := out[0]
+		n, err := s.store.UpdateReleaseNotesByVersion(r.Context(), head.Product, head.Version, head.UpdatedAt, store.ReleaseNotesPatch{
+			NotesMd: &req.NotesMd,
+		})
+		if err != nil {
+			s.log.Error("pipeline sync release notes", zap.Error(err))
+			writeError(w, http.StatusInternalServerError, "server_error")
+			return
+		}
+		notesSynced = n
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"items": out, "published": publish, "notesSynced": notesSynced})
 }
 
 var errReleaseYanked = errors.New("release_yanked")
@@ -203,6 +219,9 @@ func (s *Server) upsertPipelineRelease(
 	rel.ID = existing.ID
 	rel.CreatedAt = existing.CreatedAt
 	rel.CreatedBy = existing.CreatedBy
+	if strings.TrimSpace(rel.NotesMd) == "" {
+		rel.NotesMd = existing.NotesMd
+	}
 	if existing.Status == "published" && existing.PublishedAt != nil && publish {
 		rel.PublishedAt = existing.PublishedAt
 		rel.Status = "published"

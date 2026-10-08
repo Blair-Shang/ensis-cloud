@@ -52,7 +52,10 @@ GitHub Actions 仓库：[Blair-Shang/niuma-cloud](https://github.com/Blair-Shang
 | 工作流 | 触发 | 作用 |
 |--------|------|------|
 | [CI](./.github/workflows/ci.yml) | `main` 推送 / PR | 类型检查、Admin 构建、Go 测试 |
-| [Pack and Release](./.github/workflows/pack.yml) | `v*` 标签 / 手动 | 打 Linux/Windows amd64 归档；打标签时发 GitHub Release |
+| [Release](./.github/workflows/release.yml) | `main` 推送 | `package.json` 版本尚未发布且 changelog 有列表条目时，打包 Linux/Windows amd64 并发布 GitHub Release |
+| [Pack and Release](./.github/workflows/pack.yml) | `v*` 标签 / 手动 | 手工打标签时同样打包发版；手动运行只上传 artifact |
+
+自动发版看 `package.json` 的 `x.y.z`。把本次变更写在 `[Unreleased]` 的 `-` / `*` 列表里，再推 `main`。随后那次 changelog 提交的说明里带 `[release notes]`，用来标记版本段已经记下。
 
 CI / 打包从 npm 安装 `niuma-ui@latest`（可用变量 `NIUMA_UI_VERSION` 钉死如 `1.2.0`）。本机仍用 `link:../niuma-ui` 联调。niuma-ui ≥ 1.2.0 为编译包，按包名导入即可，不必 `shamefully-hoist`。
 

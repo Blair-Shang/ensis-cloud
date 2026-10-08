@@ -5,7 +5,7 @@
 | 脚本 | 作用 |
 |------|------|
 | `build` | `pnpm` 构建 Admin 到 `server/internal/web/dist`，再 `go build` 打出单二进制（**内嵌静态资源**） |
-| `pack-release` | 校验 CHANGELOG 版本段，打出 Linux/Windows amd64 发版归档到 `output/` |
+| `pack-release` | 校验 CHANGELOG 版本段，打出 Linux/Windows amd64 发版归档到 `output/`。自动发版会先把 `[Unreleased]` 收成版本段再调用本脚本 |
 | `start` | 后台启动 `run/niuma-cloud[.exe]`，写 pid / 日志；缺失时从样例生成 `config/app.yaml` |
 | `stop` | 按 pid 停止（先 SIGTERM，超时再强杀） |
 | `restart` | stop + start |

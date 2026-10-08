@@ -1,0 +1,126 @@
+# 推送到 main 后按 changelog 自动发版。
+# package.json 的 x.y.z 还没有 v* 标签，且 [Unreleased] 或对应版本段里有列表条目时：
+# 收成 ## [x.y.z] - 日期、打包、提交 changelog、打标签、创建 GitHub Release。
+# 提交说明含 [release notes]，且用 GITHUB_TOKEN 推送，不会再次触发本工作流或 pack.yml。
+# 手工推送的 v* 标签仍走 pack.yml。
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: ${{ !contains(github.event.head_commit.message, '[release notes]') }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: niuma-cloud
+    steps:
+      - name: Checkout niuma-cloud
+        uses: actions/checkout@v7
+        with:
+          path: niuma-cloud
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+
+      - name: Plan changelog version
+        id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin --tags --force
+          if git log -1 --format=%B | grep -F '[release notes]' >/dev/null; then
+            echo "version=" >> "$GITHUB_OUTPUT"
+            echo "release-notes commit; skip"
+            exit 0
+          fi
+          DATE=$(TZ=Asia/Shanghai date +%Y-%m-%d)
+          PUBLISHED=$(git tag -l 'v[0-9]*' | sed -nE 's/^v([0-9]+\.[0-9]+\.[0-9]+)$/\1/p' | paste -sd, -)
+          PKG=$(node -p "require('./package.json').version")
+          VERSION=$(node .github/scripts/cut-changelog.mjs plan --version "${PKG}" --published "${PUBLISHED}" --date "${DATE}")
+          if [[ -z "${VERSION}" ]]; then
+            echo "version=" >> "$GITHUB_OUTPUT"
+            echo "no unpublished changelog notes; skip"
+            exit 0
+          fi
+          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            echo "version=" >> "$GITHUB_OUTPUT"
+            echo "v${VERSION} already published"
+            exit 0
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "date=${DATE}" >> "$GITHUB_OUTPUT"
+          echo "niuma_ui_version=${{ vars.NIUMA_UI_VERSION || 'latest' }}" >> "$GITHUB_OUTPUT"
+          echo "publish v${VERSION}"
+
+      - name: Setup pnpm
+        if: steps.plan.outputs.version != ''
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.0
+          run_install: false
+
+      - name: Setup Go
+        if: steps.plan.outputs.version != ''
+        uses: actions/setup-go@v7
+        with:
+          go-version: '1.24'
+          cache-dependency-path: niuma-cloud/server/go.sum
+
+      - name: Install zip
+        if: steps.plan.outputs.version != ''
+        working-directory: .
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends zip
+
+      - name: Install JS dependencies
+        if: steps.plan.outputs.version != ''
+        run: |
+          UI="${{ steps.plan.outputs.niuma_ui_version }}"
+          pnpm pkg set "dependencies.@niuma/ui=npm:niuma-ui@${UI}"
+          pnpm install --no-frozen-lockfile
+
+      - name: Pack and publish
+        if: steps.plan.outputs.version != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SKIP_INSTALL: '1'
+          NIUMA_CLOUD_VERSION: ${{ steps.plan.outputs.version }}
+          VITE_CLOUD_API_BASE: /niuma/cloud
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.plan.outputs.version }}"
+          DATE="${{ steps.plan.outputs.date }}"
+          node .github/scripts/cut-changelog.mjs apply --version "${VERSION}" --date "${DATE}"
+          bash script/pack-release.sh
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          if git diff --cached --quiet; then
+            echo "changelog already records v${VERSION}"
+          else
+            git commit -m "docs: 记录 v${VERSION} 版本说明 [release notes]"
+            git push origin HEAD:main
+          fi
+          git tag -a "v${VERSION}" -m "v${VERSION}"
+          git push origin "v${VERSION}"
+          gh release create "v${VERSION}" \
+            --title "niuma-cloud v${VERSION}" \
+            --notes-file output/release-notes.md \
+            "output/niuma-cloud-${VERSION}-linux-amd64.tar.gz" \
+            "output/niuma-cloud-${VERSION}-windows-amd64.zip" \
+            output/SHA256SUMS.txt

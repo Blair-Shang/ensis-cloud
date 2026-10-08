@@ -86,7 +86,7 @@ GitHub Actions 在打完安装包后：**先把文件传到本机**，再登记 
 }
 ```
 
-同一维度重复推送会覆盖下载地址 / 校验和 / 说明（已 yank 的记录返回 `409 release_yanked`）。未上传安装包且未给 `downloadUrl` 时返回 `400 missing_installer`。
+同一维度重复推送会覆盖下载地址与校验和（已 yank 的记录返回 `409 release_yanked`）。`notesMd` 非空时，同一产品+版本下全部未撤回内核的更新说明一并改掉，标题仍按各内核自己的记录保留。响应里的 `notesSynced` 是改到的行数。`notesMd` 为空时保留已有说明。未上传安装包且未给 `downloadUrl` 时返回 `400 missing_installer`。
 
 员工角色：`admin`（超管，可管员工/用户账号）与 `operator`（日常运营：统计、工单、发布、只读账户）。种子账号为 admin。
 

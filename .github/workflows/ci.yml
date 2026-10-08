@@ -41,6 +41,9 @@ jobs:
           cache: pnpm
           cache-dependency-path: niuma-cloud/pnpm-lock.yaml
 
+      - name: Changelog release script
+        run: node --test .github/scripts/cut-changelog.test.mjs
+
       - name: Setup Go
         uses: actions/setup-go@v7
         with:
