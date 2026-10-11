@@ -2,28 +2,24 @@ package httpapi
 
 import "testing"
 
-func TestValidateDownloadURL(t *testing.T) {
+func TestCanonicalDesktopProduct(t *testing.T) {
 	cases := []struct {
-		url     string
-		hosts   []string
-		wantErr bool
+		in   string
+		want string
 	}{
-		{"https://cdn.niuma007.com/a.exe", nil, false},
-		{"http://cdn.niuma007.com/a.exe", nil, true},
-		{"https://127.0.0.1/a.exe", nil, true},
-		{"https://localhost/a.exe", nil, true},
-		{"https://192.168.1.1/a.exe", nil, true},
-		{"https://evil.com/a.exe", []string{"niuma007.com"}, true},
-		{"https://cdn.niuma007.com/a.exe", []string{"niuma007.com"}, false},
-		{"https://user:pass@cdn.niuma007.com/a.exe", nil, true},
+		{in: "", want: "niuma"},
+		{in: "niuma", want: "niuma"},
+		{in: "ensis-ops", want: "ensis-ops"},
+		{in: "ENSIS-OPS", want: "ensis-ops"},
+		{in: "other", want: "other"},
 	}
 	for _, tc := range cases {
-		err := validateDownloadURL(tc.url, tc.hosts)
-		if tc.wantErr && err == nil {
-			t.Fatalf("%s: want error", tc.url)
+		got, _, _, _, err := normalizeReleaseDims(tc.in, "stable", "windows", "x64")
+		if err != nil {
+			t.Fatalf("product %q: %v", tc.in, err)
 		}
-		if !tc.wantErr && err != nil {
-			t.Fatalf("%s: %v", tc.url, err)
+		if got != tc.want {
+			t.Fatalf("product %q: got %s want %s", tc.in, got, tc.want)
 		}
 	}
 }

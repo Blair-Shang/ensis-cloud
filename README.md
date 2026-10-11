@@ -1,8 +1,8 @@
 # ensis-cloud
 
-NiuMa 云侧工程：**Identity（邮箱密码/验证码）+ Feedback + Updates + Admin Ops**。
+Ensis 云侧工程：**Identity（邮箱密码/验证码）+ Feedback + Updates + Admin Ops**。
 
-与 [ensis-site](../ensis-site) 品牌站分离。生产挂在 **https://www.niuma007.com** 的工程根 **`/niuma`** 下：
+与 [ensis-site](../ensis-site) 品牌站分离。公开域名仍为 **https://www.niuma007.com**，工程根挂在 **`/niuma`** 下：
 
 | 路径 | 服务 |
 |------|------|

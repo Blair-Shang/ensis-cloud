@@ -17,30 +17,30 @@ func otpCopyFor(purpose string) otpCopy {
 	switch strings.TrimSpace(purpose) {
 	case "register":
 		return otpCopy{
-			Subject: "NiuMa 注册验证码",
+			Subject: "Ensis 注册验证码",
 			Title:   "完成账户注册",
-			Lead:    "你正在注册 NiuMa 云账户。请使用以下验证码完成注册：",
+			Lead:    "你正在注册 Ensis 云账户。请使用以下验证码完成注册：",
 			Action:  "注册验证",
 		}
 	case "login":
 		return otpCopy{
-			Subject: "NiuMa 登录验证码",
+			Subject: "Ensis 登录验证码",
 			Title:   "验证码登录",
-			Lead:    "你正在使用邮箱验证码登录或注册 NiuMa。若该邮箱尚未注册，验证通过后将自动创建账户。请使用以下验证码：",
+			Lead:    "你正在使用邮箱验证码登录或注册 Ensis。若该邮箱尚未注册，验证通过后将自动创建账户。请使用以下验证码：",
 			Action:  "登录验证",
 		}
 	case "reset":
 		return otpCopy{
-			Subject: "NiuMa 重置密码验证码",
+			Subject: "Ensis 重置密码验证码",
 			Title:   "重置账户密码",
-			Lead:    "你正在重置 NiuMa 云账户密码。请使用以下验证码继续：",
+			Lead:    "你正在重置 Ensis 云账户密码。请使用以下验证码继续：",
 			Action:  "重置验证",
 		}
 	default:
 		return otpCopy{
-			Subject: "NiuMa 验证码",
+			Subject: "Ensis 验证码",
 			Title:   "安全验证",
-			Lead:    "你正在进行 NiuMa 账户安全验证。请使用以下验证码：",
+			Lead:    "你正在进行 Ensis 账户安全验证。请使用以下验证码：",
 			Action:  "安全验证",
 		}
 	}
@@ -52,7 +52,7 @@ func renderOTPPlain(purpose, code string, ttlMin int) string {
 		ttlMin = 5
 	}
 	return fmt.Sprintf(
-		"%s\n\n%s\n\n验证码：%s\n有效期：%d 分钟\n\n如非本人操作，请忽略本邮件。\n\n— NiuMa 团队\nhttps://www.niuma007.com\n",
+		"%s\n\n%s\n\n验证码：%s\n有效期：%d 分钟\n\n如非本人操作，请忽略本邮件。\n\n— Ensis 团队\nhttps://www.niuma007.com\n",
 		c.Title,
 		c.Lead,
 		code,
@@ -87,7 +87,7 @@ func renderOTPHTML(purpose, code string, ttlMin int) string {
             <td style="padding:28px 28px 18px 28px;background:linear-gradient(135deg,#0a84ff 0%%,#409cff 100%%);">
               <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td style="color:#ffffff;font-size:13px;letter-spacing:0.04em;opacity:0.92;">NiuMa Cloud</td>
+                  <td style="color:#ffffff;font-size:13px;letter-spacing:0.04em;opacity:0.92;">Ensis Cloud</td>
                 </tr>
                 <tr>
                   <td style="padding-top:8px;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.02em;">%s</td>
@@ -113,7 +113,7 @@ func renderOTPHTML(purpose, code string, ttlMin int) string {
           <tr>
             <td style="padding:16px 28px 24px 28px;border-top:1px solid #eef0f3;">
               <p style="margin:0;font-size:12px;line-height:1.55;color:#9ca3af;">
-                — NiuMa 团队<br />
+                — Ensis 团队<br />
                 <a href="https://www.niuma007.com" style="color:#0a84ff;text-decoration:none;">www.niuma007.com</a>
               </p>
             </td>

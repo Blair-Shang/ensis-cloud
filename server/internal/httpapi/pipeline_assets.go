@@ -55,10 +55,12 @@ func (s *Server) handlePipelineReleaseAsset(w http.ResponseWriter, r *http.Reque
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if _, _, _, _, nerr := normalizeReleaseDims(dim.Product, dim.Channel, dim.Platform, dim.Arch); nerr != nil {
+	product, channel, platform, arch, nerr := normalizeReleaseDims(dim.Product, dim.Channel, dim.Platform, dim.Arch)
+	if nerr != nil {
 		writeError(w, http.StatusBadRequest, nerr.Error())
 		return
 	}
+	dim.Product, dim.Channel, dim.Platform, dim.Arch = product, channel, platform, arch
 
 	size, sum, err := s.files.Save(dim, io.LimitReader(file, max+1), max, r.FormValue("sha256"))
 	if err != nil {

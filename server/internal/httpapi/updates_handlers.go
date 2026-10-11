@@ -20,7 +20,7 @@ func (s *Server) handleUpdatesLatest(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	rel, err := s.store.LatestPublishedRelease(r.Context(), product, channel, platform, arch)
+	rel, err := s.latestDesktopRelease(r.Context(), product, channel, platform, arch)
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "not_found")
@@ -44,7 +44,7 @@ func (s *Server) handleUpdatesCheck(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_current")
 		return
 	}
-	rel, err := s.store.LatestPublishedRelease(r.Context(), product, channel, platform, arch)
+	rel, err := s.latestDesktopRelease(r.Context(), product, channel, platform, arch)
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			writeJSON(w, http.StatusOK, map[string]any{
@@ -96,7 +96,7 @@ func (s *Server) handleUpdatesReleases(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "invalid_version")
 			return
 		}
-		rel, err := s.store.GetPublishedReleaseByDim(r.Context(), product, channel, platform, arch, sv.String())
+		rel, err := s.publishedDesktopRelease(r.Context(), product, channel, platform, arch, sv.String())
 		if err != nil {
 			if errors.Is(err, store.ErrNotFound) {
 				writeError(w, http.StatusNotFound, "not_found")
@@ -111,7 +111,7 @@ func (s *Server) handleUpdatesReleases(w http.ResponseWriter, r *http.Request) {
 	}
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	items, total, err := s.store.ListPublishedReleases(r.Context(), product, channel, platform, arch, limit, offset)
+	items, total, err := s.listDesktopReleases(r.Context(), product, channel, platform, arch, limit, offset)
 	if err != nil {
 		s.log.Error("list published releases", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "server_error")
@@ -161,7 +161,7 @@ func (s *Server) handleUpdatesHit(w http.ResponseWriter, r *http.Request) {
 	}
 	version := strings.TrimSpace(req.Version)
 	if version == "" {
-		rel, lookErr := s.store.LatestPublishedRelease(r.Context(), product, channel, platform, arch)
+		rel, lookErr := s.latestDesktopRelease(r.Context(), product, channel, platform, arch)
 		if lookErr != nil {
 			if errors.Is(lookErr, store.ErrNotFound) {
 				writeError(w, http.StatusNotFound, "not_found")
@@ -172,6 +172,7 @@ func (s *Server) handleUpdatesHit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		version = rel.Version
+		product = rel.Product
 	} else {
 		sv, err := store.ParseSemVer(version)
 		if err != nil {
@@ -179,6 +180,14 @@ func (s *Server) handleUpdatesHit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		version = sv.String()
+		rel, lookErr := s.publishedDesktopRelease(r.Context(), product, channel, platform, arch, version)
+		if lookErr == nil {
+			product = rel.Product
+		} else if lookErr != nil && !errors.Is(lookErr, store.ErrNotFound) {
+			s.log.Error("hit published release", zap.Error(lookErr))
+			writeError(w, http.StatusInternalServerError, "server_error")
+			return
+		}
 	}
 	n, err := s.store.IncrementUpdateHit(r.Context(), product, channel, platform, arch, version)
 	if err != nil {
@@ -203,11 +212,11 @@ func (s *Server) handleUpdatesHitStats(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "server_error")
 		return
 	}
-	product := strings.TrimSpace(r.URL.Query().Get("product"))
+	product := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("product")))
 	if product == "" {
-		product = "niuma"
+		product = defaultProduct
 	}
-	st, err := s.store.SumUpdateHits(r.Context(), product)
+	st, err := s.sumDesktopHits(r.Context(), product)
 	if err != nil {
 		s.log.Error("sum update hits", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "server_error")

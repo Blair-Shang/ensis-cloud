@@ -109,6 +109,19 @@ func normalizeReleaseDims(product, channel, platform, arch string) (string, stri
 	return product, channel, platform, arch, nil
 }
 
+// desktopProductIDs 是同一条桌面更新线的产品 id。
+//
+// 发版登记保持 ensis-ops。已安装的旧客户端不带 product，会落到 niuma；
+// 查询任一只时，在两份已发布记录里取较新的版本。
+func desktopProductIDs(product string) []string {
+	switch product {
+	case "", defaultProduct, "ensis-ops":
+		return []string{"ensis-ops", defaultProduct}
+	default:
+		return []string{product}
+	}
+}
+
 func validateReleaseFields(r *store.AppRelease, allowedHosts []string) error {
 	if err := validateReleaseMeta(r); err != nil {
 		return err

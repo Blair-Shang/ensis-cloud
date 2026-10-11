@@ -185,3 +185,32 @@ func TestSafeDownloadRedirect(t *testing.T) {
 		t.Fatalf("managed relative: %s", got)
 	}
 }
+
+func TestOldAndNewDesktopSeeEnsisOpsRelease(t *testing.T) {
+	s, st, _ := testUpdateServer(t, "https://www.niuma007.com/niuma/cloud")
+	insertPublished(t, st, "1.0.0", "https://cdn.niuma007.com/NiuMa-1.0.0-windows-x64-Setup.exe")
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	if err := st.InsertRelease(t.Context(), &store.AppRelease{
+		ID: "rel_ensis200", Product: "ensis-ops", Version: "2.0.0", Channel: "stable",
+		Platform: "windows", Arch: "x64", Title: "ensis-ops 2.0.0",
+		DownloadURL: "https://cdn.niuma007.com/ensis-ops-2.0.0-windows-x64-Setup.exe",
+		SHA256:      strings.Repeat("cd", 32), Status: "published", PublishedAt: &now,
+		CreatedBy: "test", CreatedAt: now, UpdatedAt: now,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	oldReq := httptest.NewRequest(http.MethodGet, "/niuma/cloud/api/v1/updates/check?current=1.0.0&platform=windows&arch=x64", nil)
+	oldRec := httptest.NewRecorder()
+	s.Handler().ServeHTTP(oldRec, oldReq)
+	if oldRec.Code != http.StatusOK || !strings.Contains(oldRec.Body.String(), `"version":"2.0.0"`) || !strings.Contains(oldRec.Body.String(), `"product":"ensis-ops"`) {
+		t.Fatalf("old client status=%d body=%s", oldRec.Code, oldRec.Body.String())
+	}
+
+	newReq := httptest.NewRequest(http.MethodGet, "/niuma/cloud/api/v1/updates/check?product=ensis-ops&current=1.0.0&platform=windows&arch=x64", nil)
+	newRec := httptest.NewRecorder()
+	s.Handler().ServeHTTP(newRec, newReq)
+	if newRec.Code != http.StatusOK || !strings.Contains(newRec.Body.String(), `"updateAvailable":true`) || !strings.Contains(newRec.Body.String(), `"product":"ensis-ops"`) {
+		t.Fatalf("new client status=%d body=%s", newRec.Code, newRec.Body.String())
+	}
+}

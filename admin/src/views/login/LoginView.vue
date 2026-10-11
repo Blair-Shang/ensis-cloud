@@ -57,7 +57,7 @@ async function submit() {
     <div class="login__panel">
       <aside class="login__brand">
         <img class="login__mark" :src="markSrc" width="40" height="40" alt="" />
-        <p class="login__eyebrow">NiuMa Cloud</p>
+        <p class="login__eyebrow">Ensis Cloud</p>
         <h1 class="login__title">Ops</h1>
         <p class="login__lead">账户、反馈与产品运营控制台。仅限内部员工。</p>
       </aside>

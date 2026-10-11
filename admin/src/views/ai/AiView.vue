@@ -232,7 +232,7 @@ function onUpstreamChange() {
 
 function resetForm() {
   formVendor.value = AI_PROVIDER_PRESET_CUSTOM
-  formName.value = 'NiuMa'
+  formName.value = 'Ensis'
   formBase.value = ''
   formSecret.value = ''
   formEnabled.value = false
@@ -266,7 +266,7 @@ function onVendorChange(value: RsSelectModelValue) {
     return
   }
   const fillName =
-    isCreate.value || !formName.value.trim() || formName.value.trim() === 'NiuMa'
+    isCreate.value || !formName.value.trim() || formName.value.trim() === 'Ensis' || formName.value.trim() === 'NiuMa'
   applyPreset(id, fillName)
 }
 
@@ -659,7 +659,7 @@ onMounted(() => {
               </div>
               <div class="ops-field">
                 <RsLabel for-id="ai-name" required>展示名</RsLabel>
-                <RsInput id="ai-name" v-model="formName" placeholder="如 NiuMa / DeepSeek" />
+                <RsInput id="ai-name" v-model="formName" placeholder="如 Ensis / DeepSeek" />
               </div>
             </div>
             <div class="ops-field">

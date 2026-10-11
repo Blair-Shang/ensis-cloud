@@ -143,7 +143,7 @@ export const AI_PROVIDER_PRESETS: readonly AIProviderPreset[] = [
   {
     id: AI_PROVIDER_PRESET_CUSTOM,
     label: '自定义 / OpenAI 兼容',
-    defaultName: 'NiuMa',
+    defaultName: 'Ensis',
     baseUrl: '',
     defaultModel: '',
     models: [],

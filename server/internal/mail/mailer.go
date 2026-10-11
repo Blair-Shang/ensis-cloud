@@ -76,8 +76,8 @@ func (m *Mailer) SendFeedbackReply(email, title, reply string) error {
 	if email == "" {
 		return nil
 	}
-	subject := "NiuMa 反馈回复：" + title
-	body := fmt.Sprintf("您好，\n\n您提交的反馈「%s」已有回复：\n\n%s\n\n— NiuMa 团队\n", title, reply)
+	subject := "Ensis 反馈回复：" + title
+	body := fmt.Sprintf("您好，\n\n您提交的反馈「%s」已有回复：\n\n%s\n\n— Ensis 团队\n", title, reply)
 
 	if strings.TrimSpace(m.cfg.SMTPHost) == "" {
 		m.log.Info("feedback reply mail skipped",
@@ -104,7 +104,7 @@ func (m *Mailer) SendTest(to, subject, body string) error {
 		return fmt.Errorf("smtp host not configured")
 	}
 	if subject == "" {
-		subject = "NiuMa 邮件测试"
+		subject = "Ensis 邮件测试"
 	}
 	if body == "" {
 		body = "这是一封来自 ensis-cloud 的 SMTP 测试邮件。"
@@ -227,12 +227,12 @@ func buildMultipartMessage(from, to, subject, plain, htmlBody string) []byte {
 func formatFrom(from string) string {
 	from = strings.TrimSpace(from)
 	if from == "" {
-		return "NiuMa <noreply@niuma007.com>"
+		return "Ensis <noreply@niuma007.com>"
 	}
 	if strings.Contains(from, "<") {
 		return from
 	}
-	return "NiuMa <" + from + ">"
+	return "Ensis <" + from + ">"
 }
 
 func foldBase64(s string) string {

@@ -222,9 +222,9 @@ onUnmounted(() => {
 <template>
   <div class="ops-shell" :class="{ 'ops-shell--collapsed': collapsed }">
     <aside class="ops-sider" aria-label="主导航">
-      <router-link class="ops-sider__brand" to="/" :title="collapsed ? 'NiuMa Ops' : undefined">
+      <router-link class="ops-sider__brand" to="/" :title="collapsed ? 'Ensis Ops' : undefined">
         <img class="ops-sider__mark" :src="markSrc" width="28" height="28" alt="" />
-        <span v-if="!collapsed" class="ops-sider__brand-text">NiuMa Ops</span>
+        <span v-if="!collapsed" class="ops-sider__brand-text">Ensis Ops</span>
       </router-link>
 
       <div class="ops-sider__group">

@@ -29,7 +29,7 @@ func (s *Server) handleUpdatesDownload(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "server_error")
 		return
 	}
-	rel, err := s.store.LatestPublishedRelease(r.Context(), product, channel, platform, arch)
+	rel, err := s.latestDesktopRelease(r.Context(), product, channel, platform, arch)
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "not_found")

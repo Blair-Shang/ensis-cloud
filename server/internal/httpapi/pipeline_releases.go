@@ -92,7 +92,7 @@ func (s *Server) handlePipelineReleases(w http.ResponseWriter, r *http.Request) 
 	if title == "" {
 		ver := strings.TrimSpace(req.Version)
 		if ver != "" {
-			title = "NiuMa " + strings.TrimPrefix(ver, "v")
+			title = "ensis-ops " + strings.TrimPrefix(ver, "v")
 		}
 	}
 	// 空说明表示这次只更新安装包，不把已发布的 changelog 清掉。
