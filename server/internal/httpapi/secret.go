@@ -3,7 +3,7 @@ package httpapi
 import (
 	"strings"
 
-	"github.com/Blair-Shang/niuma-cloud/server/internal/cryptutil"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/cryptutil"
 )
 
 func (s *Server) cryptoMaster() string {

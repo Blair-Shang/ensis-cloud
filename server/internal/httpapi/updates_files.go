@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Blair-Shang/niuma-cloud/server/internal/releasefiles"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/store"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/releasefiles"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/store"
 )
 
 // handleUpdatesFile 公开下载本机安装包；仅 published 记录对应文件。

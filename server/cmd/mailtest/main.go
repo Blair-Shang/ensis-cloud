@@ -8,8 +8,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/Blair-Shang/niuma-cloud/server/internal/config"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/mail"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/config"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/mail"
 )
 
 // 用法：
@@ -68,7 +68,7 @@ func main() {
 	} else {
 		subject := "NiuMa SMTP 测试"
 		body := fmt.Sprintf(
-			"这是一封来自 niuma-cloud 的测试邮件。\n\n时间：%s\n发件：%s\nSMTP：%s:%d\n",
+			"这是一封来自 ensis-cloud 的测试邮件。\n\n时间：%s\n发件：%s\nSMTP：%s:%d\n",
 			time.Now().Format(time.RFC3339),
 			cfg.SMTPFrom,
 			cfg.SMTPHost,

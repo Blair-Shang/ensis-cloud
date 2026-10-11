@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Blair-Shang/niuma-cloud/server/internal/config"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/db"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/releasefiles"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/store"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/config"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/db"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/releasefiles"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/store"
 )
 
 func testUpdateServer(t *testing.T, publicBase string) (*Server, *store.Store, *releasefiles.Store) {

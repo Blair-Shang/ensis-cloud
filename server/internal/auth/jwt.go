@@ -28,7 +28,7 @@ type TokenIssuer struct {
 }
 
 func NewTokenIssuer(secret string, ttl time.Duration) *TokenIssuer {
-	return &TokenIssuer{secret: []byte(secret), ttl: ttl, issuer: "niuma-cloud"}
+	return &TokenIssuer{secret: []byte(secret), ttl: ttl, issuer: "ensis-cloud"}
 }
 
 func (t *TokenIssuer) Issue(subjectID, email string, kind Kind) (string, time.Time, error) {

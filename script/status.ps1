@@ -3,7 +3,7 @@
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
-$PidFile = Join-Path $Root "run\niuma-cloud.pid"
+$PidFile = Join-Path $Root "run\ensis-cloud.pid"
 $Health = "http://127.0.0.1:8090/niuma/cloud/healthz"
 
 if (-not (Test-Path $PidFile)) {

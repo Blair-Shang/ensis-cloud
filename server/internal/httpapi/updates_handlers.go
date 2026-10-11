@@ -8,7 +8,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/Blair-Shang/niuma-cloud/server/internal/store"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/store"
 )
 
 // 公开 updates API：仅返回 published 元数据，永不返回 draft/createdBy。

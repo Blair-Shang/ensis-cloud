@@ -13,7 +13,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/Blair-Shang/niuma-cloud/server/internal/config"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/config"
 )
 
 type Mailer struct {
@@ -107,7 +107,7 @@ func (m *Mailer) SendTest(to, subject, body string) error {
 		subject = "NiuMa 邮件测试"
 	}
 	if body == "" {
-		body = "这是一封来自 niuma-cloud 的 SMTP 测试邮件。"
+		body = "这是一封来自 ensis-cloud 的 SMTP 测试邮件。"
 	}
 	return m.sendPlain(to, subject, body)
 }

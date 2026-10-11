@@ -1,6 +1,6 @@
 import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { niumaUiHost } from '@niuma/ui/vite-plugins/niuma-ui-host'
+import { ensisUiHost } from '@niuma/ui/vite-plugins/ensis-ui-host'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { existsSync, readFileSync } from 'node:fs'
@@ -10,16 +10,16 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const root = resolve(__dirname, '..')
 const require = createRequire(import.meta.url)
 
-/** 本机有同级源码则联调；CI / 打包从 npm 的 niuma-ui 解析。 */
+/** 本机有同级源码则联调；CI / 打包从 npm 的 ensis-ui 解析。 */
 function resolveNiumaUiRoot(): string {
-  const sibling = resolve(root, '../niuma-ui')
+  const sibling = resolve(root, '../ensis-ui')
   if (existsSync(resolve(sibling, 'package.json'))) {
     return sibling
   }
   try {
     return dirname(require.resolve('@niuma/ui/package.json'))
   } catch {
-    return dirname(require.resolve('niuma-ui/package.json'))
+    return dirname(require.resolve('ensis-ui/package.json'))
   }
 }
 
@@ -62,13 +62,13 @@ function faviconFallback(): Plugin {
 }
 
 /**
- * niumaUiHost：只服务 pnpm dev（源码 HMR）。vite build 走包主入口。
+ * ensisUiHost：只服务 pnpm dev（源码 HMR）。vite build 走包主入口。
  * 不要把 @niuma/ui 别名到 src/index.ts。
  */
 export default defineConfig({
   root: __dirname,
   base: '/niuma/ops/',
-  plugins: [vue(), ...niumaUiHost(), faviconFallback()],
+  plugins: [vue(), ...ensisUiHost(), faviconFallback()],
   resolve: {
     alias: [
       {

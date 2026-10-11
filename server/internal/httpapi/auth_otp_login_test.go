@@ -11,11 +11,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/Blair-Shang/niuma-cloud/server/internal/auth"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/config"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/db"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/mail"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/store"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/auth"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/config"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/db"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/mail"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/store"
 )
 
 func testAuthServer(t *testing.T) (*Server, *store.Store) {

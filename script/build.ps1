@@ -15,7 +15,7 @@ Write-Host "==> admin build (embed -> server/internal/web/dist)"
 pnpm exec vue-tsc --noEmit -p admin/tsconfig.json
 pnpm exec vite build --config admin/vite.config.ts
 
-$Exe = Join-Path $RunDir "niuma-cloud.exe"
+$Exe = Join-Path $RunDir "ensis-cloud.exe"
 Write-Host "==> go build -> $Exe"
 Push-Location (Join-Path $Root "server")
 try {

@@ -4,7 +4,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PID_FILE="$ROOT/run/niuma-cloud.pid"
+PID_FILE="$ROOT/run/ensis-cloud.pid"
 HEALTH="http://127.0.0.1:8090/niuma/cloud/healthz"
 
 if [[ ! -f "$PID_FILE" ]]; then

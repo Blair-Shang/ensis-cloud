@@ -13,17 +13,17 @@
 ## 反代示意
 
 ```text
-https://www.niuma007.com/           → niuma-site :8080
-https://www.niuma007.com/api/*      → niuma-site :8080
-https://www.niuma007.com/healthz    → niuma-site :8080
-https://www.niuma007.com/niuma/*    → niuma-cloud :8090
+https://www.niuma007.com/           → ensis-site :8080
+https://www.niuma007.com/api/*      → ensis-site :8080
+https://www.niuma007.com/healthz    → ensis-site :8080
+https://www.niuma007.com/niuma/*    → ensis-cloud :8090
 ```
 
-官网仓已写入 `niuma-site/config/conf.d/niuma-site.conf`。本仓副本见 `config/nginx-locations.conf`。
+官网仓已写入 `ensis-site/config/conf.d/ensis-site.conf`。本仓副本见 `config/nginx-locations.conf`。
 
 Nginx 示例：
 
-完整片段见 `config/nginx-locations.conf` 与官网仓 `config/conf.d/niuma-site.conf`。`http { }` 须先声明：
+完整片段见 `config/nginx-locations.conf` 与官网仓 `config/conf.d/ensis-site.conf`。`http { }` 须先声明：
 
 ```nginx
 limit_req_zone  $binary_remote_addr zone=niuma_dl_latest:10m rate=60r/s;

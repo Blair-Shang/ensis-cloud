@@ -32,7 +32,7 @@ if (requireSection && (!heading || !section)) {
 }
 
 const dateMatch = heading ? heading[0].match(/## \[[^\]]+\] - (\d{4}-\d{2}-\d{2})/) : null
-const title = dateMatch ? `niuma-cloud v${version} (${dateMatch[1]})` : `niuma-cloud v${version}`
+const title = dateMatch ? `ensis-cloud v${version} (${dateMatch[1]})` : `ensis-cloud v${version}`
 const body = [
   `## ${title}`,
   '',
@@ -42,11 +42,11 @@ const body = [
   '',
   '### 产物',
   '',
-  `- \`niuma-cloud-${version}-linux-amd64.tar.gz\``,
-  `- \`niuma-cloud-${version}-windows-amd64.zip\``,
+  `- \`ensis-cloud-${version}-linux-amd64.tar.gz\``,
+  `- \`ensis-cloud-${version}-windows-amd64.zip\``,
   '- `SHA256SUMS.txt`',
   '',
-  `完整记录见 [CHANGELOG.md](https://github.com/Blair-Shang/niuma-cloud/blob/v${version}/CHANGELOG.md)。`,
+  `完整记录见 [CHANGELOG.md](https://github.com/Blair-Shang/ensis-cloud/blob/v${version}/CHANGELOG.md)。`,
 ].join('\n')
 
 fs.writeFileSync(outfile, `${body}\n`, 'utf8')

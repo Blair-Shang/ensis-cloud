@@ -9,8 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/Blair-Shang/niuma-cloud/server/internal/releasefiles"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/store"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/releasefiles"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/store"
 )
 
 // handleUpdatesDownload 稳定的「最新包」入口：按查询维度解析当前 latest published，

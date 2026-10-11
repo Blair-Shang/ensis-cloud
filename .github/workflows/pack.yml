@@ -1,8 +1,8 @@
-# niuma-cloud 打包流水线。
+# ensis-cloud 打包流水线。
 # Admin 嵌入 Go 单二进制；无 CGO，可在 Linux runner 交叉编译 Windows。
 # 自动发版走 release.yml（推送 main）。本工作流留给手工推送的 v* 标签。
 # workflow_dispatch 仅上传 artifact。
-# niuma-ui 从 npm 拉取（默认 latest），不 checkout 兄弟 Git 仓库。
+# ensis-ui 从 npm 拉取（默认 latest），不 checkout 兄弟 Git 仓库。
 name: Pack and Release
 
 on:
@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       niuma_ui_version:
-        description: npm 上的 niuma-ui 版本（如 latest 或 1.2.0）
+        description: npm 上的 ensis-ui 版本（如 latest 或 1.2.0）
         type: string
         default: 'latest'
 
@@ -33,7 +33,7 @@ jobs:
     timeout-minutes: 30
     defaults:
       run:
-        working-directory: niuma-cloud
+        working-directory: ensis-cloud
     steps:
       - name: Resolve version
         id: meta
@@ -55,10 +55,10 @@ jobs:
             echo "niuma_ui_version=${{ vars.NIUMA_UI_VERSION || 'latest' }}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Checkout niuma-cloud
+      - name: Checkout ensis-cloud
         uses: actions/checkout@v7
         with:
-          path: niuma-cloud
+          path: ensis-cloud
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -71,13 +71,13 @@ jobs:
         with:
           node-version: '20'
           cache: pnpm
-          cache-dependency-path: niuma-cloud/pnpm-lock.yaml
+          cache-dependency-path: ensis-cloud/pnpm-lock.yaml
 
       - name: Setup Go
         uses: actions/setup-go@v7
         with:
           go-version: '1.24'
-          cache-dependency-path: niuma-cloud/server/go.sum
+          cache-dependency-path: ensis-cloud/server/go.sum
 
       - name: Install zip
         working-directory: .
@@ -86,7 +86,7 @@ jobs:
       - name: Install JS dependencies
         run: |
           UI="${{ steps.meta.outputs.niuma_ui_version }}"
-          pnpm pkg set "dependencies.@niuma/ui=npm:niuma-ui@${UI}"
+          pnpm pkg set "dependencies.@niuma/ui=npm:ensis-ui@${UI}"
           pnpm install --no-frozen-lockfile
 
       - name: Verify tag matches package.json
@@ -110,12 +110,12 @@ jobs:
       - name: Upload pack artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: niuma-cloud-pack
+          name: ensis-cloud-pack
           path: |
-            niuma-cloud/output/*.tar.gz
-            niuma-cloud/output/*.zip
-            niuma-cloud/output/SHA256SUMS.txt
-            niuma-cloud/output/release-notes.md
+            ensis-cloud/output/*.tar.gz
+            ensis-cloud/output/*.zip
+            ensis-cloud/output/SHA256SUMS.txt
+            ensis-cloud/output/release-notes.md
           if-no-files-found: error
           retention-days: 14
 
@@ -129,14 +129,14 @@ jobs:
       - name: Download pack artifacts
         uses: actions/download-artifact@v8
         with:
-          name: niuma-cloud-pack
+          name: ensis-cloud-pack
           path: release-files
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: niuma-cloud ${{ github.ref_name }}
+          name: ensis-cloud ${{ github.ref_name }}
           body_path: release-files/release-notes.md
           draft: false
           fail_on_unmatched_files: true

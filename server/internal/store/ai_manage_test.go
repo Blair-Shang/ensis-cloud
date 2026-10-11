@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Blair-Shang/niuma-cloud/server/internal/db"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/store"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/db"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/store"
 )
 
 func TestAIEndpointAndModelCRUD(t *testing.T) {

@@ -11,13 +11,13 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/Blair-Shang/niuma-cloud/server/internal/config"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/db"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/httpapi"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/logging"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/mail"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/store"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/web"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/config"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/db"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/httpapi"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/logging"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/mail"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/store"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/web"
 )
 
 // version 由打包脚本 -ldflags "-X main.version=x.y.z" 注入；本地构建为 dev。

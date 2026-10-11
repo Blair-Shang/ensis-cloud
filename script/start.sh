@@ -10,8 +10,8 @@ RUN="$ROOT/run"
 CONFIG="$ROOT/config"
 LOGS="$ROOT/logs"
 DATA="$ROOT/data"
-BIN="$RUN/niuma-cloud"
-PID_FILE="$RUN/niuma-cloud.pid"
+BIN="$RUN/ensis-cloud"
+PID_FILE="$RUN/ensis-cloud.pid"
 BOOTSTRAP_ERR="$LOGS/bootstrap.err"
 
 if [[ ! -x "$BIN" && ! -f "$BIN" ]]; then
@@ -37,11 +37,11 @@ if [[ -f "$CONFIG/app.yaml.example" && ! -f "$CONFIG/app.yaml" ]]; then
   echo "Edit jwt.secret / db.dsn / staff.password before production use."
 fi
 
-# 应用日志由 zap 写入 logs/niuma-cloud.log；stdout 丢弃，stderr 仅作启动兜底
+# 应用日志由 zap 写入 logs/ensis-cloud.log；stdout 丢弃，stderr 仅作启动兜底
 nohup "$BIN" >/dev/null 2>>"$BOOTSTRAP_ERR" &
 echo $! >"$PID_FILE"
 echo "Started pid=$(cat "$PID_FILE")"
 echo "Config: $CONFIG"
-echo "Logs:   $LOGS/niuma-cloud.log"
+echo "Logs:   $LOGS/ensis-cloud.log"
 echo "API:    http://127.0.0.1:8090/niuma/cloud/healthz"
 echo "Ops:    http://127.0.0.1:8090/niuma/ops/"

@@ -1,5 +1,5 @@
-# niuma-cloud 持续集成：类型检查、Go 测试、Admin 构建。
-# niuma-ui 从 npm 拉取（默认 latest），不 checkout 兄弟 Git 仓库。
+# ensis-cloud 持续集成：类型检查、Go 测试、Admin 构建。
+# ensis-ui 从 npm 拉取（默认 latest），不 checkout 兄弟 Git 仓库。
 name: CI
 
 on:
@@ -21,12 +21,12 @@ jobs:
     timeout-minutes: 20
     defaults:
       run:
-        working-directory: niuma-cloud
+        working-directory: ensis-cloud
     steps:
-      - name: Checkout niuma-cloud
+      - name: Checkout ensis-cloud
         uses: actions/checkout@v7
         with:
-          path: niuma-cloud
+          path: ensis-cloud
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -39,7 +39,7 @@ jobs:
         with:
           node-version: '20'
           cache: pnpm
-          cache-dependency-path: niuma-cloud/pnpm-lock.yaml
+          cache-dependency-path: ensis-cloud/pnpm-lock.yaml
 
       - name: Changelog release script
         run: node --test .github/scripts/cut-changelog.test.mjs
@@ -48,12 +48,12 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version: '1.24'
-          cache-dependency-path: niuma-cloud/server/go.sum
+          cache-dependency-path: ensis-cloud/server/go.sum
 
       - name: Install JS dependencies
         run: |
           UI="${{ vars.NIUMA_UI_VERSION || 'latest' }}"
-          pnpm pkg set "dependencies.@niuma/ui=npm:niuma-ui@${UI}"
+          pnpm pkg set "dependencies.@niuma/ui=npm:ensis-ui@${UI}"
           pnpm install --no-frozen-lockfile
 
       - name: Typecheck and admin build

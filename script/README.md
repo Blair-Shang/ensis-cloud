@@ -6,7 +6,7 @@
 |------|------|
 | `build` | `pnpm` 构建 Admin 到 `server/internal/web/dist`，再 `go build` 打出单二进制（**内嵌静态资源**） |
 | `pack-release` | 校验 CHANGELOG 版本段，打出 Linux/Windows amd64 发版归档到 `output/`。自动发版会先把 `[Unreleased]` 收成版本段再调用本脚本 |
-| `start` | 后台启动 `run/niuma-cloud[.exe]`，写 pid / 日志；缺失时从样例生成 `config/app.yaml` |
+| `start` | 后台启动 `run/ensis-cloud[.exe]`，写 pid / 日志；缺失时从样例生成 `config/app.yaml` |
 | `stop` | 按 pid 停止（先 SIGTERM，超时再强杀） |
 | `restart` | stop + start |
 | `status` | 看 pid 是否存活，并探测 `/niuma/cloud/healthz` |
@@ -38,10 +38,10 @@ bash script/restart.sh
 
 | 路径 | 说明 |
 |------|------|
-| `run/niuma-cloud.exe` / `run/niuma-cloud` | 可执行文件（内嵌 Admin） |
-| `run/niuma-cloud.pid` | 进程号 |
+| `run/ensis-cloud.exe` / `run/ensis-cloud` | 可执行文件（内嵌 Admin） |
+| `run/ensis-cloud.pid` | 进程号 |
 | `config/` | 启动时自动创建；`app.yaml` 首次从 `app.yaml.example` 生成 |
-| `logs/` | 启动时自动创建；业务日志 `niuma-cloud.log`（zap + 滚动） |
+| `logs/` | 启动时自动创建；业务日志 `ensis-cloud.log`（zap + 滚动） |
 | `data/` | 启动时自动创建；安装包目录默认 `{data_dir}/releases` |
 
 默认监听 `http://127.0.0.1:8090/`（`http_addr`，见 `config/app.yaml.example`）：

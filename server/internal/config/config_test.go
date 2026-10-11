@@ -24,7 +24,7 @@ db:
   driver: sqlite
   dsn: cloud.db
 jwt:
-  secret: "dev-niuma-cloud-jwt-secret-change-me"
+  secret: "dev-ensis-cloud-jwt-secret-change-me"
 `)
 	t.Setenv("NIUMA_ALLOW_INSECURE_DEV", "")
 	t.Setenv("NIUMA_JWT_SECRET", "")
@@ -41,7 +41,7 @@ db:
   driver: sqlite
   dsn: from-file.db
 jwt:
-  secret: "dev-niuma-cloud-jwt-secret-change-me"
+  secret: "dev-ensis-cloud-jwt-secret-change-me"
 smtp:
   password: file-smtp
   log_otp: true

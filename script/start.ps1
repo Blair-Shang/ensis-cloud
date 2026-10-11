@@ -9,8 +9,8 @@ $RunDir = Join-Path $Root "run"
 $ConfigDir = Join-Path $Root "config"
 $LogDir = Join-Path $Root "logs"
 $DataDir = Join-Path $Root "data"
-$Exe = Join-Path $RunDir "niuma-cloud.exe"
-$PidFile = Join-Path $RunDir "niuma-cloud.pid"
+$Exe = Join-Path $RunDir "ensis-cloud.exe"
+$PidFile = Join-Path $RunDir "ensis-cloud.pid"
 $BootstrapErr = Join-Path $LogDir "bootstrap.err"
 
 if (-not (Test-Path $Exe)) {
@@ -35,7 +35,7 @@ if ((Test-Path $example) -and -not (Test-Path $appYaml)) {
   Write-Host "Edit jwt.secret / db.dsn / staff.password before production use."
 }
 
-# 应用日志由 zap 写入 logs/niuma-cloud.log；此处仅捕获启动极早期 panic
+# 应用日志由 zap 写入 logs/ensis-cloud.log；此处仅捕获启动极早期 panic
 $proc = Start-Process -FilePath $Exe `
   -WorkingDirectory $Root `
   -PassThru `
@@ -45,6 +45,6 @@ $proc = Start-Process -FilePath $Exe `
 Set-Content -Path $PidFile -Value $proc.Id -Encoding ascii
 Write-Host "Started pid=$($proc.Id)"
 Write-Host "Config: $ConfigDir"
-Write-Host "Logs:   $(Join-Path $LogDir 'niuma-cloud.log')"
+Write-Host "Logs:   $(Join-Path $LogDir 'ensis-cloud.log')"
 Write-Host "API:    http://127.0.0.1:8090/niuma/cloud/healthz"
 Write-Host "Ops:    http://127.0.0.1:8090/niuma/ops/"

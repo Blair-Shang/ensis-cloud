@@ -1,4 +1,4 @@
--- 001_init：niuma-cloud 初始表结构（SQLite，仅本地临时调试）
+-- 001_init：ensis-cloud 初始表结构（SQLite，仅本地临时调试）
 -- 约定与 MySQL 版对齐：
 --   1) 列名禁止 SQL 关键字（status/body/key/user/order 等）
 --   2) 时间存 UTC ISO8601 文本，语义对齐 MySQL DATETIME(3)

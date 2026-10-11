@@ -9,8 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/Blair-Shang/niuma-cloud/server/internal/llm"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/store"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/llm"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/store"
 )
 
 type aiCatalogModel struct {

@@ -15,7 +15,7 @@ echo "==> admin build (embed -> server/internal/web/dist)"
 pnpm exec vue-tsc --noEmit -p admin/tsconfig.json
 pnpm exec vite build --config admin/vite.config.ts
 
-BIN="$ROOT/run/niuma-cloud"
+BIN="$ROOT/run/ensis-cloud"
 echo "==> go build -> $BIN"
 (
   cd "$ROOT/server"

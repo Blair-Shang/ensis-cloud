@@ -23,12 +23,12 @@ jobs:
     timeout-minutes: 30
     defaults:
       run:
-        working-directory: niuma-cloud
+        working-directory: ensis-cloud
     steps:
-      - name: Checkout niuma-cloud
+      - name: Checkout ensis-cloud
         uses: actions/checkout@v7
         with:
-          path: niuma-cloud
+          path: ensis-cloud
           fetch-depth: 0
           fetch-tags: true
 
@@ -79,7 +79,7 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version: '1.24'
-          cache-dependency-path: niuma-cloud/server/go.sum
+          cache-dependency-path: ensis-cloud/server/go.sum
 
       - name: Install zip
         if: steps.plan.outputs.version != ''
@@ -90,7 +90,7 @@ jobs:
         if: steps.plan.outputs.version != ''
         run: |
           UI="${{ steps.plan.outputs.niuma_ui_version }}"
-          pnpm pkg set "dependencies.@niuma/ui=npm:niuma-ui@${UI}"
+          pnpm pkg set "dependencies.@niuma/ui=npm:ensis-ui@${UI}"
           pnpm install --no-frozen-lockfile
 
       - name: Pack and publish
@@ -119,8 +119,8 @@ jobs:
           git tag -a "v${VERSION}" -m "v${VERSION}"
           git push origin "v${VERSION}"
           gh release create "v${VERSION}" \
-            --title "niuma-cloud v${VERSION}" \
+            --title "ensis-cloud v${VERSION}" \
             --notes-file output/release-notes.md \
-            "output/niuma-cloud-${VERSION}-linux-amd64.tar.gz" \
-            "output/niuma-cloud-${VERSION}-windows-amd64.zip" \
+            "output/ensis-cloud-${VERSION}-linux-amd64.tar.gz" \
+            "output/ensis-cloud-${VERSION}-windows-amd64.zip" \
             output/SHA256SUMS.txt

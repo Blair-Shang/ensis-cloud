@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Blair-Shang/niuma-cloud/server/internal/auth"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/store"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/auth"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/store"
 )
 
 const (

@@ -1,4 +1,4 @@
--- 001_init：niuma-cloud 初始表结构（MySQL）
+-- 001_init：ensis-cloud 初始表结构（MySQL）
 -- 约定：
 --   1) 时间字段统一 DATETIME(3)，存 UTC（DSN loc=UTC + parseTime=true）
 --   2) 禁止使用 SQL 关键字作列名（如 status/body/key/user/order 等）

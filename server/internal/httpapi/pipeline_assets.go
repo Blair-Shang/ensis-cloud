@@ -7,8 +7,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/Blair-Shang/niuma-cloud/server/internal/releasefiles"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/store"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/releasefiles"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/store"
 )
 
 const maxPipelineMultipartMemory = 8 << 20 // 仅缓冲表单字段；文件走磁盘

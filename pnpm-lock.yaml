@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@niuma/ui':
-        specifier: link:../niuma-ui
-        version: link:../niuma-ui
+        specifier: link:../ensis-ui
+        version: link:../ensis-ui
       axios:
         specifier: ^1.20.0
         version: 1.20.0

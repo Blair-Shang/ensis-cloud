@@ -1,8 +1,8 @@
-# niuma-cloud
+# ensis-cloud
 
 NiuMa 云侧工程：**Identity（邮箱密码/验证码）+ Feedback + Updates + Admin Ops**。
 
-与 [niuma-site](../niuma-site) 品牌站分离。生产挂在 **https://www.niuma007.com** 的工程根 **`/niuma`** 下：
+与 [ensis-site](../ensis-site) 品牌站分离。生产挂在 **https://www.niuma007.com** 的工程根 **`/niuma`** 下：
 
 | 路径 | 服务 |
 |------|------|
@@ -23,7 +23,7 @@ pnpm dev:server   # 仅后端（/niuma/cloud、/niuma/ops）
 pnpm dev:admin    # 仅 Admin（base=/niuma/ops/，代理 /niuma/cloud）
 ```
 
-需要同级 [`../niuma-ui`](https://github.com/Blair-Shang/niuma-ui)。持久化使用 **MySQL**（见 `config/app.yaml`）；SQLite 仅作临时调试。
+需要同级 [`../ensis-ui`](https://github.com/Blair-Shang/ensis-ui)。持久化使用 **MySQL**（见 `config/app.yaml`）；SQLite 仅作临时调试。
 
 生产构建与启停：
 
@@ -47,7 +47,7 @@ bash script/start.sh
 
 ## CI
 
-GitHub Actions 仓库：[Blair-Shang/niuma-cloud](https://github.com/Blair-Shang/niuma-cloud)
+GitHub Actions 仓库：[Blair-Shang/ensis-cloud](https://github.com/Blair-Shang/ensis-cloud)
 
 | 工作流 | 触发 | 作用 |
 |--------|------|------|
@@ -57,7 +57,7 @@ GitHub Actions 仓库：[Blair-Shang/niuma-cloud](https://github.com/Blair-Shang
 
 自动发版看 `package.json` 的 `x.y.z`。把本次变更写在 `[Unreleased]` 的 `-` / `*` 列表里，再推 `main`。随后那次 changelog 提交的说明里带 `[release notes]`，用来标记版本段已经记下。
 
-CI / 打包从 npm 安装 `niuma-ui@latest`（可用变量 `NIUMA_UI_VERSION` 钉死如 `1.2.0`）。本机仍用 `link:../niuma-ui` 联调。niuma-ui ≥ 1.2.0 为编译包，按包名导入即可，不必 `shamefully-hoist`。
+CI / 打包从 npm 安装 `ensis-ui@latest`（可用变量 `NIUMA_UI_VERSION` 钉死如 `1.2.0`）。本机仍用 `link:../ensis-ui` 联调。ensis-ui ≥ 1.2.0 为编译包，按包名导入即可，不必 `shamefully-hoist`。
 
 ## 文档
 

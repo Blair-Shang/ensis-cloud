@@ -3,16 +3,16 @@
 ## 仓库边界
 
 ```text
-niuma-ui       # 设计系统
-niuma-site     # 品牌站 + 下载计数
-niuma-cloud    # 本仓：Identity + Feedback + Updates + 系统 AI 代理 + Admin
+ensis-ui       # 设计系统
+ensis-site     # 品牌站 + 下载计数
+ensis-cloud    # 本仓：Identity + Feedback + Updates + 系统 AI 代理 + Admin
 NiuMa          # 桌面客户端
 ```
 
 ## 目录划分（合理，保持）
 
 ```text
-niuma-cloud/
+ensis-cloud/
   admin/                 # Ops 前端（Vue，部署路径 /niuma/ops/）
   server/                # Go API + 嵌入 Admin 静态资源
     cmd/server/          # 进程入口
@@ -37,7 +37,7 @@ niuma-cloud/
 | 目录 | 职责 | 评价 |
 |------|------|------|
 | `admin/` | 仅员工运营 UI | 与品牌站分离，正确 |
-| `server/` | 唯一后端进程 | 与 niuma-site 同构，易维护 |
+| `server/` | 唯一后端进程 | 与 ensis-site 同构，易维护 |
 | `config/` | 运行配置 | 密钥不进仓库 |
 | 不设 `data/*.db` 为主存储 | 持久化走 MySQL | 符合生产 |
 
@@ -49,7 +49,7 @@ niuma-cloud/
 
 | 路径 | 职责 |
 |------|------|
-| `/` | 官网（niuma-site） |
+| `/` | 官网（ensis-site） |
 | `/api/*` | 官网下载计数后 302 到 cloud `/updates/download` |
 | `/niuma/cloud/api/v1/*` | Cloud API（含最新包入口 `/updates/download`） |
 | `/niuma/cloud/healthz` | Cloud 健康检查 |

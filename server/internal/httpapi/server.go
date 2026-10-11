@@ -8,12 +8,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/Blair-Shang/niuma-cloud/server/internal/auth"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/config"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/mail"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/ratelimit"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/releasefiles"
-	"github.com/Blair-Shang/niuma-cloud/server/internal/store"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/auth"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/config"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/mail"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/ratelimit"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/releasefiles"
+	"github.com/Blair-Shang/ensis-cloud/server/internal/store"
 )
 
 // Server 聚合 Identity / Feedback / Ops 的 HTTP 入口。
@@ -147,7 +147,7 @@ func (s *Server) Handler() http.Handler {
 		}
 		if isServiceHintPath(path) {
 			writeJSON(w, http.StatusOK, map[string]any{
-				"service": "niuma-cloud",
+				"service": "ensis-cloud",
 				"hint":    "use path prefixes",
 				"root":    RootPrefix,
 				"cloud":   CloudPrefix,
@@ -254,7 +254,7 @@ func (s *Server) serveOps(w http.ResponseWriter, r *http.Request) bool {
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "service": "niuma-cloud"})
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "service": "ensis-cloud"})
 }
 
 // withCORS 按配置放行 Origin；处理浏览器预检 OPTIONS。

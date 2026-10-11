@@ -3,7 +3,7 @@
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
-$PidFile = Join-Path $Root "run\niuma-cloud.pid"
+$PidFile = Join-Path $Root "run\ensis-cloud.pid"
 
 if (-not (Test-Path $PidFile)) {
   Write-Host "Not running (no pid file)."

@@ -1,12 +1,19 @@
 # 变更日志
 
-本文件记录 niuma-cloud 的重要变更。
+本文件记录 ensis-cloud 的重要变更。
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
 推送到 `main` 后自动发版：先把 `package.json` 的 `version` 改为新的 `x.y.z`，并把本次变更写成 `[Unreleased]` 下的列表条目。该版本还没有 `v*` 标签时，Release 工作流会把这些条目收成 `## [x.y.z] - YYYY-MM-DD`，提交 changelog、打标签、打包并发布 GitHub Release。`package.json`、git tag（`v*`）与本文件版本号一致。已经写好的 `## [x.y.z]` 段同样可以发布。手工推送 `v*` 标签仍会打包发版。公开基线为 **1.1.0**。
 
 ## [Unreleased]
+
+## [2.0.0] - 2026-10-11
+
+### 变更
+
+- 工程名由 `niuma-cloud` 改为 `ensis-cloud`。GitHub 仓库、Go module（`github.com/Blair-Shang/ensis-cloud/server`）、二进制、日志与 JWT issuer 同步切换。已签发的登录令牌在升级后失效，需要重新登录。
+- 对外挂载仍是 `/niuma`（域名 `niuma007.com` 不变）。MySQL 库名仍是 `niuma_cloud`，已有数据不用迁移。
 
 ## [1.2.2] - 2026-09-22
 

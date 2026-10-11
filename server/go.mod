@@ -1,4 +1,4 @@
-module github.com/Blair-Shang/niuma-cloud/server
+module github.com/Blair-Shang/ensis-cloud/server
 
 go 1.24.0
 
